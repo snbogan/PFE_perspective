@@ -1,0 +1,262 @@
+---
+title: "Untitled"
+author: "Sam Bogan"
+date: "2024-09-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggpubr)
+
+```
+
+Simulate and plot Figure 1A
+
+```{r}
+
+# Define a custom scaling function to range z from -1 to 1
+scale_to_range <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)) * 2 - 1)
+}
+
+# Define the grid size
+grid_size <- 500
+
+# Create a grid of points
+df <- expand.grid(x = seq(1, 10, length.out = grid_size),  # Start at 1 to avoid log(0)
+                  y = seq(1, 10, length.out = grid_size))
+
+# Create two log curves that curve near the middle of x and top of y
+df <- df %>%
+  mutate(
+    y_log_curve = 4.1*log(x + 1) + -.9,                             # Log curve peaks near the top of y (shifted)
+    z_slope_1 = 1 - abs(y - y_log_curve) / sqrt(2),           # Distance to the curve for slope +1
+    y_neg_log_curve = 3*log(11 - x) + 2,                        # Log curve for slope -1, mirrored
+    z_slope_neg1 = 1 - abs(y - y_neg_log_curve) / sqrt(2)     # Distance to the mirrored curve
+  )
+
+# Reshape the data to long format
+df_long <- df %>%
+  pivot_longer(cols = c(z_slope_1, z_slope_neg1), names_to = "slope", values_to = "z") %>%
+  mutate(slope = ifelse(slope == "z_slope_1", "Predictable variance", "Stochastic variance"),
+         z_scaled = scale_to_range(z))  # Scale z between -1 and 1
+
+```
+
+Simulate and plot Fig 1B
+
+```{r}
+
+# Create two log curves that curve near the middle of x and top of y
+dfb <- df %>%
+  mutate(
+    y_log_curve = 4.1*log(x + 1) + -.9,                             # Log curve peaks near the top of y (shifted)
+    z_slope_1 = 1 - abs(y - y_log_curve) / sqrt(2),           # Distance to the curve for slope +1
+  )
+
+# Reshape the data to long format
+df_longb <- dfb %>%
+  pivot_longer(cols = c(z_slope_1), names_to = "slope", values_to = "z") %>%
+  mutate(z_scaled = scale_to_range(z))  # Scale z between -1 and 1
+
+# Plot using ggplot2 with a white-black color gradient
+Fig_1B <- ggplot(df_longb, aes(x = x, y = y, fill = z_scaled)) +
+  geom_tile() +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  scale_fill_gradient(low = "white", high = "black", breaks = c(-1,0,1)) +
+  labs(title = "Condition dependence",
+       subtitle = " ",
+    x = "Organismal condition", y = "Plasticity", 
+    fill = bquote(atop("Relative",
+                       "fitness")))
+
+Fig_1B
+
+```
+
+Simulate and plot Fig 1C
+
+```{r}
+
+# Create two log curves that curve near the middle of x and top of y
+dfc <- df %>%
+  mutate(
+    y_neg_log_curve = 3*log(11 - x) + 2,                             # Log curve peaks near the top of y (shifted)
+    z_slope_neg1 = 1 - abs(y - y_neg_log_curve) / sqrt(2),           # Distance to the curve for slope +1
+  )
+
+# Reshape the data to long format
+df_longc <- dfc %>%
+  pivot_longer(cols = c(z_slope_neg1), names_to = "slope", values_to = "z") %>%
+  mutate(z_scaled = scale_to_range(z))  # Scale z between -1 and 1
+
+# Plot using ggplot2 with a white-black color gradient
+Fig_1C <- ggplot(df_longc, aes(x = x, y = y, fill = z_scaled)) +
+  geom_tile() +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  scale_fill_gradient(low = "white", high = "black", guide = "none") +
+  labs(title = "Fitness trade-off",
+       subtitle = " ",
+    x = "Secondary trait", y = "Plasticity", fill = "Fitness")
+
+Fig_1C
+
+```
+
+Simulate and plot Figure 1D
+
+```{r}
+
+# Create two log curves that curve near the middle of x and top of y
+# Create the data frame with x and y values (assuming 'df' already has x and y defined)
+dfd <- df %>%
+  mutate(
+    # Create new z values based on the slope type
+    z_slope_1 = 1 - sqrt((x - max(x))^2 + (y - max(y))^2) / max(sqrt((x - max(x))^2 + (y - max(y))^2)),  # Darker near top-right
+    z_slope_neg1 = 1 - sqrt((x - mean(x))^2 + (y - mean(y))^2) / max(sqrt((x - mean(x))^2 + (y - mean(y))^2))  # Darker near the middle
+  )
+
+# Reshape the data to long format
+df_longd <- dfd %>%
+  pivot_longer(cols = c(z_slope_1, z_slope_neg1), names_to = "slope", values_to = "z") %>%
+  mutate(slope = ifelse(slope == "z_slope_1", "+ genetic correlation", "- genetic correlation"),
+         z_scaled = scale_to_range(z))  # Scale z between -1 and 1
+
+# Plot using ggplot2 with a white-black color gradient
+Fig_1D <- ggplot(df_longd, aes(x = x, y = y, fill = z_scaled)) +
+  geom_tile() +
+  theme_minimal() +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  facet_wrap(~slope) +
+  scale_fill_gradient(low = "white", high = "black", guide = "none") +
+  labs(title = "Linked selection",
+       x = "Secondary trait", y = "Plasticity", fill = "Fitness")
+
+Fig_1D
+
+
+```
+
+Modify 1A now that we have a panel with a darker corner
+
+```{r}
+
+# Remove stochastic variation
+# Reshape the data to long format
+df_long_f <- filter(df_long, slope == "Predictable variance")
+df_longd_f <- filter(df_longd, slope == "+ genetic correlation")
+
+df_longd_f$x <- -df_longd_f$x
+df_longd_f$y <- -df_longd_f$y
+df_longd_f$slope = "Stochastic variance"
+df_longd_f$z_scaled <- scale(df_longd_f$z)/3
+
+df_long_2 <- rbind(df_long_f, df_longd_f)
+
+# Plot using ggplot2 with a white-black color gradient
+Fig_1A <- ggplot(df_long_2, aes(x = x, y = y, fill = z_scaled)) +
+  geom_tile() +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  facet_wrap(~slope, scale = "free") +
+  scale_fill_gradient(low = "white", high = "black", guide = "none") +
+  labs(title = "Environmental predictability",
+    x = "Environmental variation", y = "Plasticity", fill = "Fitness")
+
+Fig_1A
+
+```
+
+Assemble panel of a,b,c, and d
+
+```{r}
+
+FE_Fig_1top <- ggarrange(Fig_1A, Fig_1B,
+                   labels = c("A", "B"),
+                   widths = c(.6,.4),
+                   ncol = 2, nrow = 1)
+
+FE_Fig_1bot <- ggarrange(Fig_1C, Fig_1D,
+                   labels = c("C", "D"),
+                   widths = c(.4,.6),
+                   ncol = 2, nrow = 1)
+
+FE_Fig_1 <- ggarrange(FE_Fig_1top, FE_Fig_1bot,
+                   labels = c("", ""),
+                   ncol = 1, nrow = 2, align = "hv")
+
+# Export Fig_1 as png
+png("~/Documents/GitHub/FE_Fig_1.png", units = "in", width = 12, 
+    height = 10, 
+    res = 600)
+
+FE_Fig_1
+
+```
+
+Plot reaction norms for Fig. 1
+
+```{r}
+
+# Create df
+Fig_2B_df <- data.frame(E = c(0,1,0,1,0,1,0,1),
+                        P = c(1,1,0,0,.515,1,.485,0),
+                        hap = c("italic(a)[x] * italic(b)[x]",
+                                "italic(a)[x] * italic(b)[x]",
+                                "italic(a)[y] * italic(b)[x]",
+                                "italic(a)[y] * italic(b)[x]",
+                                "italic(a)[x] * italic(b)[y]",
+                                "italic(a)[x] * italic(b)[y]",
+                                "italic(a)[y] * italic(b)[y]",
+                                "italic(a)[y] * italic(b)[y]"),
+                        type = c("Canalized haplotypes", "Canalized haplotypes", 
+                                 "Canalized haplotypes", "Canalized haplotypes",
+                                 "Plastic haplotypes", "Plastic haplotypes",
+                                 "Plastic haplotypes", "Plastic haplotypes"))
+                         
+Fig_2B_df$hap_expr <- sapply(Fig_2B_df$hap, function(x) parse(text = x))
+              
+# Create faceted plot of reaction norms
+Fig_2B <- ggplot(data = Fig_2B_df,
+                 aes(x = E, y = P, group = hap, color = hap)) +
+  geom_line(stat = "identity", size = 1) +
+  geom_point(size = 4) +
+  facet_wrap(~type) +
+  scale_color_manual(
+    values = c("red", "yellow2", "blue", "green3"),
+    labels = Fig_2B_df$hap_expr) +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  scale_y_continuous(limits = c(-0.5,1.5)) +
+  labs(x = expression(italic("E")), y = expression(italic("P")),
+       color = "Haplotype")
+
+Fig_2B
+
+
+# Export Fig_1 as png
+png("~/Documents/GitHub/FE_Fig_2B.png", units = "in", width = 12, 
+    height = 6, 
+    res = 600)
+
+Fig_2B
+
+
+```
+
