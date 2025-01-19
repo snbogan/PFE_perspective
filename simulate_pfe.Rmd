@@ -8,9 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-
-
 ```
+
+Simulation without assumptions about mutation rate, recombination rate, or population size
 
 ```{r}
 
@@ -122,4 +122,144 @@ writeXStringSet(fasta_sequences, "arg_sim/simulated_population.fasta")
 head(fasta_sequences)
 
 ```
+
+Model different mutation rates, recombination rates, and pop sizes
+
+```{r}
+
+# Set parameters for simulation
+total_length <- 100000  # 100 kb region
+num_generations <- 50  # Number of generations
+alleles <- c("A", "T", "C", "G")  # Map A1, A2, B1, B2 to nucleotides
+gene_length <- total_length / 2  # Split between Gene A and Gene B
+
+# Function to initialize random alleles for genes A and B, with more realistic sequence
+initialize_population <- function(n, gene_length) {
+  population <- data.frame(
+    Gene_A = sample(alleles[1:2], n, replace = TRUE),  # A1, A2 -> A, T
+    Gene_B = sample(alleles[3:4], n, replace = TRUE)   # B1, B2 -> C, G
+  )
+  
+  # Create more realistic random sequences
+  population$Seq_A <- sapply(population$Gene_A, function(allele) {
+    paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = "")
+  })
+  
+  population$Seq_B <- sapply(population$Gene_B, function(allele) {
+    paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = "")
+  })
+  
+  return(population)
+}
+
+# Function to apply selection on the population
+apply_selection <- function(population, selection_type) {
+  if (selection_type == "plastic") {
+    selected <- population$Gene_A == "A" & population$Gene_B == "C"
+  } else if (selection_type == "canalized") {
+    selected <- (population$Gene_A == "A" & population$Gene_B == "C") | 
+                (population$Gene_A == "T" & population$Gene_B == "G")
+  }
+  return(population[selected, , drop = FALSE])
+}
+
+# Function to simulate recombination between alleles A and B
+recombine <- function(population, recombination_rate) {
+  for (i in seq_len(nrow(population) * recombination_rate)) {
+    ind1 <- sample(1:nrow(population), 1)
+    ind2 <- sample(1:nrow(population), 1)
+    # Swap Gene_B sequences to simulate recombination
+    temp <- population[ind1, "Seq_B"]
+    population[ind1, "Seq_B"] <- population[ind2, "Seq_B"]
+    population[ind2, "Seq_B"] <- temp
+  }
+  return(population)
+}
+
+# Function to simulate mutations in the population
+mutate <- function(population, mutation_rate) {
+  for (i in seq_len(nrow(population))) {
+    # Apply mutations to Gene_A
+    if (runif(1) < mutation_rate) {
+      pos <- sample(1:nchar(population$Seq_A[i]), 1)
+      new_base <- sample(setdiff(alleles, substr(population$Seq_A[i], pos, pos)), 1)
+      substr(population$Seq_A[i], pos, pos) <- new_base
+    }
+    # Apply mutations to Gene_B
+    if (runif(1) < mutation_rate) {
+      pos <- sample(1:nchar(population$Seq_B[i]), 1)
+      new_base <- sample(setdiff(alleles, substr(population$Seq_B[i], pos, pos)), 1)
+      substr(population$Seq_B[i], pos, pos) <- new_base
+    }
+  }
+  return(population)
+}
+
+# Function to generate DNA sequences
+generate_dna_sequences <- function(population) {
+  sequences <- character(nrow(population))
+  for (i in seq_len(nrow(population))) {
+    sequences[i] <- paste(population$Seq_A[i], population$Seq_B[i], sep = "")
+  }
+  return(sequences)
+}
+
+# Main simulation loop with different scenarios
+recombination_rates <- c(0.01, 0.05, 0.1)  # Recombination rates
+mutation_rates <- c(1e-6, 1e-5, 1e-4)      # Mutation rates
+population_sizes <- c(50, 100, 200)        # Effective population sizes
+
+# Iterate over all combinations of parameters
+for (recomb_rate in recombination_rates) {
+  for (mut_rate in mutation_rates) {
+    for (pop_size in population_sizes) {
+      # Initialize population
+      population <- initialize_population(pop_size, gene_length)
+      
+      # Simulate over generations
+      for (generation in seq_len(num_generations)) {
+        # Apply selection for the plastic phenotype (A1B1 -> A and C)
+        population <- apply_selection(population, "plastic")
+        
+        # Recombination step
+        population <- recombine(population, recomb_rate)
+        
+        # Mutation step
+        population <- mutate(population, mut_rate)
+        
+        # Apply selection for the canalized phenotype (A1B1 or A2B2)
+        population <- apply_selection(population, "canalized")
+        
+        # Adjust population size dynamically to simulate effective population size
+        if (nrow(population) > pop_size) {
+          population <- population[sample(1:nrow(population), pop_size), ]
+        }
+      }
+      
+      # Generate the final DNA sequences
+      final_sequences <- generate_dna_sequences(population)
+      
+      # Create a names vector for the sequences
+      seq_names <- paste("Individual", seq_len(length(final_sequences)), sep = "_")
+      
+      # Convert sequences into a Biostrings object to output FASTA format
+      fasta_sequences <- DNAStringSet(final_sequences)
+      names(fasta_sequences) <- seq_names
+      
+      # Generate file name based on parameters
+      file_name <- sprintf(
+        "arg_sim/simulated_pop_recomb%.2f_mut%.1e_pop%d.fasta",
+        recomb_rate, mut_rate, pop_size
+      )
+      
+      # Write the FASTA file
+      writeXStringSet(fasta_sequences, file_name)
+      
+      cat("Written:", file_name, "\n")
+    }
+  }
+}
+
+```
+
 

@@ -10,8 +10,8 @@
 #SBATCH --error=argweaver_sim1.err
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=48GB
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=68GB
 
 # Load dependencies
 module load miniconda3
@@ -21,7 +21,7 @@ conda activate argweaver
 cd /hb/home/snbogan/pfe
 
 # Align simulated sequences
-mafft --auto simulated_population.fasta > simulated_population_mafft.fasta
+mafft --thread 8 simulated_population.fasta > simulated_population_mafft.fasta
 
 # Run argweaver on aligned samples
 arg-sample -f simulated_population_mafft.fasta \
