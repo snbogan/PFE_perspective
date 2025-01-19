@@ -68,7 +68,8 @@ Fig_1B <- ggplot(df_longb, aes(x = x, y = y, fill = z_scaled)) +
   theme_classic(base_size = 20) +
   theme(strip.background = element_blank(),
         axis.ticks = element_blank(),
-        axis.text = element_blank()) +
+        axis.text = element_blank(),
+        legend.position = "none") +
   scale_fill_gradient(low = "white", high = "black", breaks = c(-1,0,1)) +
   labs(title = "Condition dependence",
        subtitle = " ",
@@ -187,12 +188,12 @@ Assemble panel of a,b,c, and d
 
 FE_Fig_1top <- ggarrange(Fig_1A, Fig_1B,
                    labels = c("A", "B"),
-                   widths = c(.6,.4),
+                   widths = c(.65,.35),
                    ncol = 2, nrow = 1)
 
 FE_Fig_1bot <- ggarrange(Fig_1C, Fig_1D,
                    labels = c("C", "D"),
-                   widths = c(.4,.6),
+                   widths = c(.35,.65),
                    ncol = 2, nrow = 1)
 
 FE_Fig_1 <- ggarrange(FE_Fig_1top, FE_Fig_1bot,

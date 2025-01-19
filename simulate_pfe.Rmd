@@ -1,0 +1,125 @@
+---
+title: "SLiM_PFE"
+author: "Sam Bogan"
+date: "2025-01-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+
+```
+
+```{r}
+
+# Load necessary library
+library(Biostrings)
+
+# Set parameters for simulation
+total_length <- 100000  # 100 kb region
+num_individuals <- 100  # Population size
+num_generations <- 50  # Number of generations
+alleles <- c("A", "T", "C", "G")  # Map A1, A2, B1, B2 to nucleotides
+gene_length <- total_length / 2  # Split between Gene A and Gene B
+
+# Function to initialize random alleles for genes A and B, with more realistic sequence
+initialize_population <- function(n, gene_length) {
+  population <- data.frame(
+    Gene_A = sample(alleles[1:2], n, replace = TRUE),  # A1, A2 -> A, T
+    Gene_B = sample(alleles[3:4], n, replace = TRUE)   # B1, B2 -> C, G
+  )
+  
+  # Create more realistic random sequences
+  population$Seq_A <- sapply(population$Gene_A, function(allele) {
+    # For A1 (A), A2 (T), generate random sequence for the gene
+    if (allele == "A") {
+      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
+    } else {
+      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
+    }
+  })
+  
+  population$Seq_B <- sapply(population$Gene_B, function(allele) {
+    # For B1 (C), B2 (G), generate random sequence for the gene
+    if (allele == "C") {
+      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
+    } else {
+      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
+    }
+  })
+  
+  return(population)
+}
+
+# Function to simulate selection on the population
+apply_selection <- function(population, selection_type) {
+  if (selection_type == "plastic") {
+    # Favor the plastic allele (e.g., A1B1) -> A and C
+    selected <- population$Gene_A == "A" & population$Gene_B == "C"
+  } else if (selection_type == "canalized") {
+    # Favor canalized haplotype (A1B1 or A2B2)
+    selected <- (population$Gene_A == "A" & population$Gene_B == "C") | 
+                (population$Gene_A == "T" & population$Gene_B == "G")
+  }
+  # Apply selection by keeping selected individuals
+  return(population[selected, , drop = FALSE])
+}
+
+# Function to simulate recombination between alleles A and B
+recombine <- function(population) {
+  new_pop <- population
+  recombination_indices <- sample(1:nrow(population), nrow(population) / 2)
+  
+  for (i in recombination_indices) {
+    # Randomly swap B allele between two individuals to simulate recombination
+    new_pop[i, "Seq_B"] <- population[sample(1:nrow(population), 1), "Seq_B"]
+  }
+  return(new_pop)
+}
+
+# Function to generate DNA sequences
+generate_dna_sequences <- function(population, gene_length) {
+  sequences <- character(nrow(population))
+  
+  for (i in 1:nrow(population)) {
+    # Combine both gene sequences (A and B) into a full sequence
+    sequences[i] <- paste(population$Seq_A[i], population$Seq_B[i], sep = "")
+  }
+  return(sequences)
+}
+
+# Main simulation loop
+population <- initialize_population(num_individuals, gene_length)
+
+# Simulate over generations
+for (generation in 1:num_generations) {
+  # Apply selection for the plastic phenotype (A1B1 -> A and C)
+  population <- apply_selection(population, "plastic")
+  
+  # Recombination step
+  population <- recombine(population)
+  
+  # Apply selection for the canalized phenotype (A1B1 or A2B2 -> A and C or T and G)
+  population <- apply_selection(population, "canalized")
+}
+
+# Generate the final DNA sequences
+final_sequences <- generate_dna_sequences(population, gene_length)
+
+# Create a names vector for the sequences
+seq_names <- paste("Individual", 1:length(final_sequences), sep = "_")
+
+# Convert sequences into a Biostrings object to output FASTA format
+fasta_sequences <- DNAStringSet(final_sequences)
+names(fasta_sequences) <- seq_names
+
+# Write the FASTA file
+writeXStringSet(fasta_sequences, "arg_sim/simulated_population.fasta")
+
+# Print the first few sequences to check
+head(fasta_sequences)
+
+```
+
