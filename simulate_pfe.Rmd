@@ -17,111 +17,325 @@ Simulation without assumptions about mutation rate, recombination rate, or popul
 # Load necessary library
 library(Biostrings)
 
-# Set parameters for simulation
+# Define parameters
 total_length <- 100000  # 100 kb region
-num_individuals <- 100  # Population size
-num_generations <- 50  # Number of generations
-alleles <- c("A", "T", "C", "G")  # Map A1, A2, B1, B2 to nucleotides
-gene_length <- total_length / 2  # Split between Gene A and Gene B
+num_individuals <- 10   # Population size
+num_generations <- 50   # Number of generations
+alleles <- c("A", "T", "C", "G")  # Possible nucleotides
+gene_length <- total_length / 2   # Length for each haplotype
+mutation_rate <- 0.001  # Mutation rate per site
 
-# Function to initialize random alleles for genes A and B, with more realistic sequence
+# Function to initialize the population with random haplotypes
 initialize_population <- function(n, gene_length) {
   population <- data.frame(
-    Gene_A = sample(alleles[1:2], n, replace = TRUE),  # A1, A2 -> A, T
-    Gene_B = sample(alleles[3:4], n, replace = TRUE)   # B1, B2 -> C, G
+    Hap_A1 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = "")),
+    Hap_A2 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = "")),
+    Hap_B1 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = "")),
+    Hap_B2 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = ""))
   )
-  
-  # Create more realistic random sequences
-  population$Seq_A <- sapply(population$Gene_A, function(allele) {
-    # For A1 (A), A2 (T), generate random sequence for the gene
-    if (allele == "A") {
-      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
-    } else {
-      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
-    }
-  })
-  
-  population$Seq_B <- sapply(population$Gene_B, function(allele) {
-    # For B1 (C), B2 (G), generate random sequence for the gene
-    if (allele == "C") {
-      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
-    } else {
-      return(paste(sample(c("A", "T", "C", "G"), gene_length, replace = TRUE), collapse = ""))
-    }
-  })
-  
   return(population)
 }
 
-# Function to simulate selection on the population
-apply_selection <- function(population, selection_type) {
-  if (selection_type == "plastic") {
-    # Favor the plastic allele (e.g., A1B1) -> A and C
-    selected <- population$Gene_A == "A" & population$Gene_B == "C"
-  } else if (selection_type == "canalized") {
-    # Favor canalized haplotype (A1B1 or A2B2)
-    selected <- (population$Gene_A == "A" & population$Gene_B == "C") | 
-                (population$Gene_A == "T" & population$Gene_B == "G")
+# Function to introduce mutations
+mutate_haplotype <- function(haplotype, mutation_rate) {
+  seq_split <- unlist(strsplit(haplotype, ""))
+  mutate_indices <- which(runif(length(seq_split)) < mutation_rate)
+  seq_split[mutate_indices] <- sample(alleles, length(mutate_indices), replace = TRUE)
+  return(paste(seq_split, collapse = ""))
+}
+
+mutate_population <- function(population, mutation_rate) {
+  population[] <- lapply(population, function(hap) sapply(hap, mutate_haplotype, mutation_rate))
+  return(population)
+}
+
+# Function to perform recombination
+recombine <- function(population) {
+  n <- nrow(population)
+  for (i in seq_len(n)) {
+    partner <- sample(seq_len(n), 1)
+    if (runif(1) < 0.5) {
+      temp <- population$Hap_A2[i]
+      population$Hap_A2[i] <- population$Hap_A2[partner]
+      population$Hap_A2[partner] <- temp
+    }
+    if (runif(1) < 0.5) {
+      temp <- population$Hap_B2[i]
+      population$Hap_B2[i] <- population$Hap_B2[partner]
+      population$Hap_B2[partner] <- temp
+    }
   }
-  # Apply selection by keeping selected individuals
+  return(population)
+}
+
+# Function to apply selection while maintaining population size
+apply_selection <- function(population, selection_criteria) {
+  selected <- switch(
+    selection_criteria,
+    "plastic" = which(substr(population$Hap_A1, 1, 1) == "A" & substr(population$Hap_B1, 1, 1) == "C"),
+    "canalized" = which(substr(population$Hap_A1, 1, 1) == "T" & substr(population$Hap_B1, 1, 1) == "G")
+  )
+  
+  # Ensure selected population is exactly num_individuals
+  if (length(selected) < num_individuals) {
+    additional <- sample(seq_len(nrow(population)), num_individuals - length(selected), replace = TRUE)
+    selected <- c(selected, additional)
+  } else if (length(selected) > num_individuals) {
+    selected <- sample(selected, num_individuals)
+  }
+  
   return(population[selected, , drop = FALSE])
 }
 
-# Function to simulate recombination between alleles A and B
-recombine <- function(population) {
-  new_pop <- population
-  recombination_indices <- sample(1:nrow(population), nrow(population) / 2)
+# Function to generate high-depth sequences by replicating haplotypes
+generate_high_depth_sequences <- function(population, depth_per_individual = 20) {
+  high_depth_sequences <- list()
   
-  for (i in recombination_indices) {
-    # Randomly swap B allele between two individuals to simulate recombination
-    new_pop[i, "Seq_B"] <- population[sample(1:nrow(population), 1), "Seq_B"]
+  for (i in seq_len(nrow(population))) {
+    # Replicate each individual’s haplotype pair (A1 + B1, A2 + B2) multiple times to simulate read depth
+    for (j in 1:depth_per_individual) {
+      high_depth_sequences <- c(high_depth_sequences, paste(population$Hap_A1[i], population$Hap_B1[i], sep = ""))
+      high_depth_sequences <- c(high_depth_sequences, paste(population$Hap_A2[i], population$Hap_B2[i], sep = ""))
+    }
   }
-  return(new_pop)
+  
+  return(high_depth_sequences)
 }
 
-# Function to generate DNA sequences
-generate_dna_sequences <- function(population, gene_length) {
-  sequences <- character(nrow(population))
-  
-  for (i in 1:nrow(population)) {
-    # Combine both gene sequences (A and B) into a full sequence
-    sequences[i] <- paste(population$Seq_A[i], population$Seq_B[i], sep = "")
-  }
+# Generate DNA sequences for output
+generate_dna_sequences <- function(population) {
+  sequences <- c(
+    paste(population$Hap_A1, population$Hap_B1, sep = ""),
+    paste(population$Hap_A2, population$Hap_B2, sep = "")
+  )
   return(sequences)
 }
 
-# Main simulation loop
+# Initialize population
 population <- initialize_population(num_individuals, gene_length)
 
 # Simulate over generations
-for (generation in 1:num_generations) {
-  # Apply selection for the plastic phenotype (A1B1 -> A and C)
-  population <- apply_selection(population, "plastic")
+for (generation in seq_len(num_generations)) {
+  # Reproduction: Create offspring by sampling parents
+  offspring <- population[sample(seq_len(nrow(population)), num_individuals, replace = TRUE), ]
   
-  # Recombination step
-  population <- recombine(population)
+  # Mutation
+  offspring <- mutate_population(offspring, mutation_rate)
   
-  # Apply selection for the canalized phenotype (A1B1 or A2B2 -> A and C or T and G)
-  population <- apply_selection(population, "canalized")
+  # Recombination
+  offspring <- recombine(offspring)
+  
+  # Selection
+  offspring <- apply_selection(offspring, "plastic")
+  
+  # Update population
+  population <- offspring
 }
 
-# Generate the final DNA sequences
-final_sequences <- generate_dna_sequences(population, gene_length)
+# Generate final high-depth DNA sequences by replicating each individual’s haplotypes
+final_high_depth_sequences <- generate_high_depth_sequences(population, depth_per_individual = 50)  # Set desired read depth per individual
 
-# Create a names vector for the sequences
-seq_names <- paste("Individual", 1:length(final_sequences), sep = "_")
+# Create sequence names
+seq_names <- paste0("Individual_", rep(seq_len(num_individuals), each = 2 * 50), "_Hap_", rep(c("1", "2"), each = 50), "_Rep_", rep(1:50, times = num_individuals))
 
-# Convert sequences into a Biostrings object to output FASTA format
-fasta_sequences <- DNAStringSet(final_sequences)
+# Convert character vector to DNAStringSet
+fasta_sequences <- DNAStringSet(sapply(final_high_depth_sequences, DNAString))
+
+# Assign names to the sequences
 names(fasta_sequences) <- seq_names
 
-# Write the FASTA file
-writeXStringSet(fasta_sequences, "arg_sim/simulated_population.fasta")
+# Write to FASTA file
+writeXStringSet(fasta_sequences, "simulated_population_high_depth.fasta")
 
-# Print the first few sequences to check
+# Print the first few sequences to verify
 head(fasta_sequences)
 
+# ----------------------------------------------
+# Align the simulated high-depth sequences to the reference genome
+
+# Assuming you have BWA or another aligner installed on the system
+# This step would be done via system calls or external software (BWA, Minimap2, etc.)
+# The alignment process would generate a BAM file
+
+system("bwa index reference_genome.fasta")  # Index the reference genome
+system("bwa mem reference_genome.fasta simulated_population_high_depth.fasta > aligned_reads_high_depth.sam")  # Perform the alignment
+
+# Convert SAM to BAM
+system("samtools view -Sb aligned_reads_high_depth.sam > aligned_reads_high_depth.bam")
+
+# Sort and index the BAM file
+system("samtools sort aligned_reads_high_depth.bam -o aligned_reads_high_depth_sorted.bam")
+system("samtools index aligned_reads_high_depth_sorted.bam")
+
+# ----------------------------------------------
+# Call variants from the BAM file
+
+# Create a VCF file using the `bcftools` command line tool
+system("bcftools mpileup -O v -f reference_genome.fasta aligned_reads_high_depth_sorted.bam | bcftools call -mv -Ov -o variants_high_depth.vcf")
+
+# Print out the first few lines of the VCF file to verify
+system("head variants_high_depth.vcf")
+
 ```
+
+
+```{r}
+
+# Load necessary library
+library(Biostrings)
+
+# Define parameters
+total_length <- 100000  # 100 kb region
+num_individuals <- 10   # Population size
+num_generations <- 50   # Number of generations
+alleles <- c("A", "T", "C", "G")  # Possible nucleotides
+gene_length <- total_length / 2   # Length for each haplotype
+mutation_rate <- 0.001  # Mutation rate per site
+
+# Function to initialize the population with random haplotypes
+initialize_population <- function(n, gene_length) {
+  population <- data.frame(
+    Hap_A1 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = "")),
+    Hap_A2 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = "")),
+    Hap_B1 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = "")),
+    Hap_B2 = replicate(n, paste(sample(alleles, gene_length, replace = TRUE), collapse = ""))
+  )
+  return(population)
+}
+
+# Function to introduce mutations
+mutate_haplotype <- function(haplotype, mutation_rate) {
+  seq_split <- unlist(strsplit(haplotype, ""))
+  mutate_indices <- which(runif(length(seq_split)) < mutation_rate)
+  seq_split[mutate_indices] <- sample(alleles, length(mutate_indices), replace = TRUE)
+  return(paste(seq_split, collapse = ""))
+}
+
+mutate_population <- function(population, mutation_rate) {
+  population[] <- lapply(population, function(hap) sapply(hap, mutate_haplotype, mutation_rate))
+  return(population)
+}
+
+# Function to perform recombination
+recombine <- function(population) {
+  n <- nrow(population)
+  for (i in seq_len(n)) {
+    partner <- sample(seq_len(n), 1)
+    if (runif(1) < 0.5) {
+      temp <- population$Hap_A2[i]
+      population$Hap_A2[i] <- population$Hap_A2[partner]
+      population$Hap_A2[partner] <- temp
+    }
+    if (runif(1) < 0.5) {
+      temp <- population$Hap_B2[i]
+      population$Hap_B2[i] <- population$Hap_B2[partner]
+      population$Hap_B2[partner] <- temp
+    }
+  }
+  return(population)
+}
+
+# Function to apply selection while maintaining population size
+apply_selection <- function(population, selection_criteria) {
+  selected <- switch(
+    selection_criteria,
+    "plastic" = which(substr(population$Hap_A1, 1, 1) == "A" & substr(population$Hap_B1, 1, 1) == "C"),
+    "canalized" = which(substr(population$Hap_A1, 1, 1) == "T" & substr(population$Hap_B1, 1, 1) == "G")
+  )
+  
+  # Ensure selected population is exactly num_individuals
+  if (length(selected) < num_individuals) {
+    additional <- sample(seq_len(nrow(population)), num_individuals - length(selected), replace = TRUE)
+    selected <- c(selected, additional)
+  } else if (length(selected) > num_individuals) {
+    selected <- sample(selected, num_individuals)
+  }
+  
+  return(population[selected, , drop = FALSE])
+}
+
+# Generate DNA sequences for output
+generate_dna_sequences <- function(population) {
+  sequences <- c(
+    paste(population$Hap_A1, population$Hap_B1, sep = ""),
+    paste(population$Hap_A2, population$Hap_B2, sep = "")
+  )
+  return(sequences)
+}
+
+# Initialize population
+population <- initialize_population(num_individuals, gene_length)
+
+# Simulate over generations
+for (generation in seq_len(num_generations)) {
+  # Reproduction: Create offspring by sampling parents
+  offspring <- population[sample(seq_len(nrow(population)), num_individuals, replace = TRUE), ]
+  
+  # Mutation
+  offspring <- mutate_population(offspring, mutation_rate)
+  
+  # Recombination
+  offspring <- recombine(offspring)
+  
+  # Selection
+  offspring <- apply_selection(offspring, "plastic")
+  
+  # Update population
+  population <- offspring
+}
+
+# Generate final DNA sequences
+final_sequences <- generate_dna_sequences(population)
+
+# Create sequence names
+seq_names <- paste0("Individual_", rep(seq_len(num_individuals), each = 2), "_Hap_", c("1", "2"))
+
+# Convert sequences into a Biostrings object and write to FASTA
+fasta_sequences <- DNAStringSet(final_sequences)
+names(fasta_sequences) <- seq_names
+writeXStringSet(fasta_sequences, "simulated_population.fasta")
+
+# Print the first few sequences to verify
+head(fasta_sequences)
+
+# Select a haplotype to be used as the reference genome (e.g., Individual_1_Hap_1)
+reference_sequence <- final_sequences[1]  # Assuming the first sequence is Individual_1_Hap_1
+reference_fasta <- DNAStringSet(reference_sequence)
+
+# Assign a name to the reference sequence
+names(reference_fasta) <- "Individual_1_Hap_1"
+
+# Write the reference genome to a FASTA file
+writeXStringSet(reference_fasta, "reference_genome.fasta")
+
+# ----------------------------------------------
+# Align the simulated sequences to the reference genome
+
+# Assuming you have BWA or another aligner installed on the system
+# This step would be done via system calls or external software (BWA, Minimap2, etc.)
+# The alignment process would generate a BAM file
+
+system("bwa index reference_genome.fasta")  # Index the reference genome
+system("bwa mem reference_genome.fasta simulated_population.fasta > aligned_reads.sam")  # Perform the alignment
+
+# Convert SAM to BAM
+system("samtools view -Sb aligned_reads.sam > aligned_reads.bam")
+
+# Sort and index the BAM file
+system("samtools sort aligned_reads.bam -o aligned_reads_sorted.bam")
+system("samtools index aligned_reads_sorted.bam")
+
+# ----------------------------------------------
+# Call variants from the BAM file
+
+# Create a VCF file using the `bcftools` command line tool
+system("bcftools mpileup -O v -f reference_genome.fasta aligned_reads_sorted.bam | bcftools call -mv -Ov -o variants.vcf")
+
+# Print out the first few lines of the VCF file to verify
+system("head variants.vcf")
+
+```
+
 
 Model different mutation rates, recombination rates, and pop sizes
 
@@ -259,6 +473,70 @@ for (recomb_rate in recombination_rates) {
     }
   }
 }
+
+```
+
+argweaver code
+
+```{bash}
+
+# Load dependencies
+module load miniconda3
+conda activate argweaver
+
+# Move directories
+cd /hb/home/snbogan/pfe
+
+# Run argweaver on aligned samples
+arg-sample -f simulated_population.fasta \
+ -o /hb/home/snbogan/pfe/argweaver_sim1 \
+ -N 10000 -m 2.5e-8 -r 1.5e-8 \
+ --ntimes 20 --maxtime 100e3 -c 1 -n 100 --overwrite
+
+```
+
+Wrangling argweaver samples
+
+```{python}
+
+def extract_newick_trees(file_path, output_path):
+    """
+    Extracts Newick format trees from a file and saves them to a new file.
+
+    Parameters:
+        file_path (str): Path to the input file containing Newick trees.
+        output_path (str): Path to save the extracted Newick trees.
+    """
+    trees = []
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            if line.startswith('TREE'):
+                # Extract the Newick tree part from the line
+                parts = line.strip().split('\t')
+                if len(parts) > 3:
+                    newick_tree = parts[3]
+                    trees.append(newick_tree)
+
+    # Save extracted trees to output file
+    with open(output_path, 'w') as output_file:
+        for tree in trees:
+            output_file.write(tree + '\n\n')
+
+# Example usage
+input_file = '/hb/home/snbogan/pfe/argweaver_sim1.100.smc'  # Replace with your input file path
+output_file = 'newick_trees.txt'  # Replace with your desired output file path
+extract_newick_trees(input_file, output_file)
+
+```
+
+Extract specific newick trees from sampled geneologies and create mock allele frequencies for first test
+
+```{bash}
+
+sed -n "5p" newick_trees.txt > gen5.newick
+
+for i in {1..20}; do echo "$RANDOM / 32768" | bc -l; done > freq.txt
 
 ```
 
