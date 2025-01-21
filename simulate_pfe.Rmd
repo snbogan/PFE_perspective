@@ -37,13 +37,13 @@ freqs <- data.frame(
 # Selection coefficients for scenarios
 selection_scenario1 <- function(temp) {
   list(
-    axbx = ifelse(temp > 30, 0.15, ifelse(temp > 25, -0.01, -0.05)),
-    axby = ifelse(temp > 22 & temp < 30, 0.05, ifelse(temp > 30, -0.01, 0))
+    axbx = ifelse(temp > 30, 0.15, ifelse(temp > 25, -0.05, -0.15)),
+    axby = ifelse(temp > 22 & temp < 30, 0.05, ifelse(temp > 30, -0.05, 0))
   )
 }
 selection_scenario2 <- function(temp) {
   list(
-    axbx = ifelse(temp > 30, 0.10, ifelse(temp > 25, -0.01, -0.05)),
+    axbx = ifelse(temp > 30, 0.15, ifelse(temp > 25, -0.05, -0.15)),
     axby = 0  # Neutral under all conditions
   )
 }
