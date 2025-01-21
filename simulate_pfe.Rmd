@@ -38,7 +38,7 @@ freqs <- data.frame(
 selection_scenario1 <- function(temp) {
   list(
     axbx = ifelse(temp > 30, 0.15, ifelse(temp > 25, -0.05, -0.15)),
-    axby = ifelse(temp > 22 & temp < 30, 0.05, ifelse(temp > 30, -0.05, 0))
+    axby = ifelse(temp > 18 & temp < 28, 0.05, ifelse(temp > 28, -0.05, 0))
   )
 }
 selection_scenario2 <- function(temp) {
@@ -352,11 +352,29 @@ for (i in 1:num_individuals) {
   system(paste("samtools index Individual_", i, "_aligned_reads_sorted.bam", sep = ""))
   
   # Call variants from the BAM file
-  system(paste("bcftools mpileup -O v -f reference_genome.fasta Individual_", i, "_aligned_reads_sorted.bam | bcftools call -mv -Ov -o Individual_", i, "_variants.vcf", sep = ""))
+  system(paste("bcftools mpileup -O v -f reference_genome.fasta Individual_", i, "_aligned_reads_sorted.bam | bcftools call -mv -Ov -o Individual_", i, "_raw_variants.vcf", sep = ""))
+  
+  # **Filter for biallelic SNPs only**
+  system(paste("bcftools view -v snps -m2 -M2 Individual_", i, "_raw_variants.vcf > Individual_", i, "_biallelic_variants.vcf", sep = ""))
 }
 
 # Print out the first few lines of the VCF files to verify
 system("cat Individual_1_variants.vcf")
+
+```
+
+Merge simulated vcf's
+
+```{bash}
+
+# Compress and index each VCF file
+for vcf in *.vcf; do
+  bgzip -c "$vcf" > "${vcf}.gz"
+  tabix -p vcf "${vcf}.gz"
+done
+
+# Merge individual VCF files into a single VCF
+bcftools merge -Ov -o merged_variants.vcf *biallelic_variants.vcf.gz
 
 ```
 
