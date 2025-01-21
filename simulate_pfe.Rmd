@@ -8,11 +8,185 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library(tidyverse)
+library(ggpubr)
+library(gridExtra)
+
+```
+
+Figure 2 simulation of epistatic PFE
+
+```{r}
+
+# Parameters
+set.seed(42)
+generations <- 100
+population_size <- 1000
+recomb_rate <- 0.02
+drift_sd <- 0.005
+temperature <- seq(20, 35, length.out = generations) + rnorm(generations, sd = 0.5)
+
+# Initial haplotype frequencies
+freqs <- data.frame(
+  generation = 1:generations,
+  axbx = 0.0,   # Completely purged initially
+  axby = 0.10,  # Initial frequency
+  other = 0.90  # Other haplotypes
+)
+
+# Selection coefficients for scenarios
+selection_scenario1 <- function(temp) {
+  list(
+    axbx = ifelse(temp > 30, 0.15, ifelse(temp > 25, -0.01, -0.05)),
+    axby = ifelse(temp > 22 & temp < 30, 0.05, ifelse(temp > 30, -0.01, 0))
+  )
+}
+selection_scenario2 <- function(temp) {
+  list(
+    axbx = ifelse(temp > 30, 0.10, ifelse(temp > 25, -0.01, -0.05)),
+    axby = 0  # Neutral under all conditions
+  )
+}
+
+# Simulation function
+simulate_haplotypes <- function(selection_function) {
+  results <- freqs
+  recombination_events <- numeric(generations)
+  
+  for (t in 2:generations) {
+    temp <- temperature[t]
+    sel <- selection_function(temp)
+    
+    # Recombination: Stronger dependence on axby and bx alleles
+    recombination_events[t] <- recomb_rate * results$axby[t-1] * results$other[t-1]
+    new_axbx <- recombination_events[t]
+    
+    # Selection and drift
+    axbx_fit <- results$axbx[t-1] + sel$axbx * results$axbx[t-1] + new_axbx
+    axby_fit <- results$axby[t-1] + sel$axby * results$axby[t-1] - new_axbx
+    
+    # Drift
+    axbx_fit <- axbx_fit + rnorm(1, mean = 0, sd = drift_sd)
+    axby_fit <- axby_fit + rnorm(1, mean = 0, sd = drift_sd)
+    
+    # Normalize frequencies
+    other_fit <- max(0, 1 - axbx_fit - axby_fit)
+    total <- axbx_fit + axby_fit + other_fit
+    
+    results$axbx[t] <- max(0, axbx_fit / total)
+    results$axby[t] <- max(0, axby_fit / total)
+    results$other[t] <- max(0, other_fit / total)
+  }
+  
+  results$recombination <- recombination_events
+  results
+}
+
+# Run simulations for both scenarios
+scenario1 <- simulate_haplotypes(selection_scenario1)
+scenario1$scenario <- "PFE"
+
+scenario2 <- simulate_haplotypes(selection_scenario2)
+scenario2$scenario <- "Neutral plasticity"
+
+# Update for relabeling and adding selection coefficients over time
+scenario1 <- scenario1 %>%
+  mutate(sel_axbx = map_dbl(1:generations, ~ selection_scenario1(temperature[.x])$axbx),
+         sel_axby = map_dbl(1:generations, ~ selection_scenario1(temperature[.x])$axby))
+
+scenario2 <- scenario2 %>%
+  mutate(sel_axbx = map_dbl(1:generations, ~ selection_scenario2(temperature[.x])$axbx),
+         sel_axby = map_dbl(1:generations, ~ selection_scenario2(temperature[.x])$axby))
+
+# Combine results
+results <- bind_rows(scenario1, scenario2) %>%
+  pivot_longer(cols = c(axbx, axby, other), names_to = "haplotype", values_to = "frequency")
+
+# Separate datasets for clarity
+selection_results <- results %>%
+  filter(haplotype == "axbx") %>%
+  select(generation, scenario, sel_axbx, sel_axby) %>%
+  distinct()
+
+recombination_results <- results %>%
+  filter(haplotype == "axbx") %>%
+  select(generation, scenario, recombination) %>%
+  distinct()
+
+temperature_results <- data.frame(
+  generation = 1:generations,
+  temperature = temperature,
+  scenario = rep(c("PFE", "Neutral plasticity"), each = generations)
+)
+
+# Plotting
+library(patchwork)
+
+# Temperature over time
+plot_temp <- ggplot(temperature_results, aes(x = generation, y = temperature)) +
+  geom_line(size = 1) +
+  facet_wrap(~scenario, nrow = 2) +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank()) +
+  labs(y = "Environment", x = "Generation") +
+  theme(legend.position = "none")
+
+# Recombination events leading to axbx
+plot_recomb <- ggplot(recombination_results, aes(x = generation, y = recombination)) +
+  geom_line(size = 1) +
+  facet_wrap(~scenario, nrow = 2) +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank()) +
+  labs(title = "axbx formed by recombination", y = "Recombination events", x = "Generation") +
+  theme(legend.position = "none")
+
+# Frequencies of haplotypes
+plot_haplotypes <- ggplot(results, aes(x = generation, y = frequency, color = haplotype)) +
+  geom_line(size = 1) +
+  facet_wrap(~scenario, nrow = 2) +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank()) +
+  labs(y = "Frequency", x = "Generation", , color = "Haplotype") +
+  scale_color_manual(values = c("axbx" = "red", "axby" = "orange", "other" = "gray")) +
+  theme(legend.position = "top")
+
+# Selection coefficients
+plot_selection <- ggplot(selection_results, aes(x = generation)) +
+  geom_smooth(aes(y = sel_axbx, color = "axbx"), size = 1, se = FALSE, span = .1) +
+  geom_smooth(aes(y = sel_axby, color = "axby"), size = 1, se = FALSE, span = .1) +
+  facet_wrap(~scenario, nrow = 2) +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank()) +
+  labs( y = "Selection coefficient", x = "Generation", color = "Haplotype") +
+  scale_color_manual(values = c("axbx" = "red", "axby" = "orange")) +
+  theme(legend.position = "top")
+
+library(ggpubr)
+
+# Combine plots into a grid with ggarrange
+final_plot <- ggarrange(
+  plot_temp, 
+  plot_recomb, 
+  plot_selection, 
+  plot_haplotypes, 
+  ncol = 2, nrow = 2, 
+  labels = c("A", "B", "C", "D")
+)
+
+# Display the combined plot
+# Export the comparison plot as PNG
+png("~/Documents/GitHub/PFE_perspective/Fig_2rev.png", 
+    units = "in", width = 12, height = 12, res = 600)
+final_plot
+dev.off()
+
 ```
 
 Simulation without assumptions about mutation rate, recombination rate, or population size
 
 ```{r}
+
+setwd("~/Documents/GitHub/PFE_perspective/arg_sim/")
 
 # Load necessary library
 library(Biostrings)
@@ -144,40 +318,49 @@ fasta_sequences <- DNAStringSet(sapply(final_high_depth_sequences, DNAString))
 # Assign names to the sequences
 names(fasta_sequences) <- seq_names
 
-# Write to FASTA file
-writeXStringSet(fasta_sequences, "simulated_population_high_depth.fasta")
+# Output separate FASTA files for each individual
+for (i in 1:num_individuals) {
+  # Correctly subset 100 sequences per individual (50 reads for each haplotype)
+  individual_sequences <- fasta_sequences[((i - 1) * 100 + 1):(i * 100)]  
+  writeXStringSet(individual_sequences, paste0("Individual_", i, "_high_depth.fasta"))
+}
 
-# Print the first few sequences to verify
-head(fasta_sequences)
+# Reference sequence
+reference_sequence <- reference_sequence[[1]]
 
-# ----------------------------------------------
-# Align the simulated high-depth sequences to the reference genome
+# Convert to a DNAStringSet object
+reference_fasta <- DNAStringSet(DNAString(reference_sequence))
 
-# Assuming you have BWA or another aligner installed on the system
-# This step would be done via system calls or external software (BWA, Minimap2, etc.)
-# The alignment process would generate a BAM file
+# Assign a name to the reference sequence
+names(reference_fasta) <- "Individual_1_Hap_1"
 
-system("bwa index reference_genome.fasta")  # Index the reference genome
-system("bwa mem reference_genome.fasta simulated_population_high_depth.fasta > aligned_reads_high_depth.sam")  # Perform the alignment
-
-# Convert SAM to BAM
-system("samtools view -Sb aligned_reads_high_depth.sam > aligned_reads_high_depth.bam")
-
-# Sort and index the BAM file
-system("samtools sort aligned_reads_high_depth.bam -o aligned_reads_high_depth_sorted.bam")
-system("samtools index aligned_reads_high_depth_sorted.bam")
+# Write the reference genome to a FASTA file
+writeXStringSet(reference_fasta, "reference_genome.fasta")
 
 # ----------------------------------------------
-# Call variants from the BAM file
+# Align each individual’s reads to the reference genome
+for (i in 1:num_individuals) {
+  # Align the reads of each individual to the reference
+  system(paste("bwa index reference_genome.fasta"))  # Index the reference genome
+  system(paste("bwa mem reference_genome.fasta Individual_", i, "_high_depth.fasta > Individual_", i, "_aligned_reads.sam", sep = ""))  # Perform the alignment
 
-# Create a VCF file using the `bcftools` command line tool
-system("bcftools mpileup -O v -f reference_genome.fasta aligned_reads_high_depth_sorted.bam | bcftools call -mv -Ov -o variants_high_depth.vcf")
+  # Convert SAM to BAM
+  system(paste("samtools view -Sb Individual_", i, "_aligned_reads.sam > Individual_", i, "_aligned_reads.bam", sep = ""))
+  
+  # Sort and index the BAM file
+  system(paste("samtools sort Individual_", i, "_aligned_reads.bam -o Individual_", i, "_aligned_reads_sorted.bam", sep = ""))
+  system(paste("samtools index Individual_", i, "_aligned_reads_sorted.bam", sep = ""))
+  
+  # Call variants from the BAM file
+  system(paste("bcftools mpileup -O v -f reference_genome.fasta Individual_", i, "_aligned_reads_sorted.bam | bcftools call -mv -Ov -o Individual_", i, "_variants.vcf", sep = ""))
+}
 
-# Print out the first few lines of the VCF file to verify
-system("head variants_high_depth.vcf")
+# Print out the first few lines of the VCF files to verify
+system("head Individual_1_variants.vcf")
 
 ```
 
+Second approach
 
 ```{r}
 
@@ -335,7 +518,6 @@ system("bcftools mpileup -O v -f reference_genome.fasta aligned_reads_sorted.bam
 system("head variants.vcf")
 
 ```
-
 
 Model different mutation rates, recombination rates, and pop sizes
 
@@ -539,5 +721,4 @@ sed -n "5p" newick_trees.txt > gen5.newick
 for i in {1..20}; do echo "$RANDOM / 32768" | bc -l; done > freq.txt
 
 ```
-
 
