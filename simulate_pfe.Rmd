@@ -14,6 +14,143 @@ library(gridExtra)
 
 ```
 
+Figure 1 diagram
+
+```{r}
+
+# Simulate data for the three reaction norm scenarios
+set.seed(123)
+
+n_lines <- 3
+n_environments <- 5
+environment <- seq(1, n_environments)
+
+# Scenario 1: Genotype
+genotype_only <- data.frame(
+  Environment = rep(environment, n_lines),
+  Genotype = rep(1:n_lines, each = n_environments),
+  Phenotype = rep(seq(0, 2, length.out = n_lines), each = n_environments),
+  Scenario = "Genotype"
+)
+
+# Scenario 2: Genotype + Environment
+genotype_environment <- data.frame(
+  Environment = rep(environment, n_lines),
+  Genotype = rep(1:n_lines, each = n_environments),
+  Phenotype = rep(seq(0, 2, length.out = n_lines), each = n_environments) + 
+              rep(environment, n_lines),
+  Scenario = "Genotype + environment"
+)
+
+# Scenario 3: Genotype x Environment
+genotype_gxe <- data.frame(
+  Environment = rep(environment, n_lines),
+  Genotype = rep(1:n_lines, each = n_environments),
+  Phenotype = rep(seq(0, 2, length.out = n_lines), each = n_environments) + 
+              c(rep(1, n_environments), rep(0, n_environments), rep(-1, n_environments)) * environment,
+  Scenario = "Genotype x environment"
+)
+
+# Combine all scenarios
+reaction_norm_data <- rbind(genotype_only, genotype_environment, genotype_gxe)
+reaction_norm_data$Scenario <- factor(reaction_norm_data$Scenario, 
+                                      levels = c("Genotype", "Genotype + environment", "Genotype x environment"))
+
+# Plot reaction norms
+reaction_norm_plot <- ggplot(reaction_norm_data, aes(x = Environment, y = Phenotype, 
+                                                     group = Genotype)) +
+  geom_line(size = 1.5, color = "gray70") +
+  facet_wrap(~ Scenario, scales = "free_y") +
+  labs(x = "Environment", y = "Phenotype", color = "Genotype") +
+  theme_classic(base_size = 20) +
+  theme(strip.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none")
+
+# Simulate data for evolutionary change
+n <- 1000
+
+# Plasticity-first evolution: High rate of phenotypic change
+plasticity_first <- data.frame(
+  Plasticity = rnorm(n, mean = 2, sd = 0.5),
+  Phenotype = pmax(rnorm(n, mean = 4, sd = 0.5), 0),
+  Selection = rnorm(n, mean = 0.2, sd = 0.05),
+  Scenario = "Plasticity-first"
+)
+
+# Canalization: High rate of phenotypic change
+canalization <- data.frame(
+  Plasticity = rnorm(n, mean = -2, sd = 0.5),
+  Phenotype = pmax(rnorm(n, mean = 4, sd = 0.5), 0),
+  Selection = rnorm(n, mean = -0.2, sd = 0.05),
+  Scenario = "Canalization"
+)
+
+# Plasticity-buffered evolution: Low rate of phenotypic change near 0
+plasticity_buffered <- data.frame(
+  Plasticity = rnorm(n, mean = 1, sd = 0.5),
+  Phenotype = pmax(rnorm(n, mean = 0.5, sd = 0.1), 0),
+  Selection = rnorm(n, mean = 0.2, sd = 0.05),
+  Scenario = "Plasticity-buffered"
+)
+
+# Combine data
+evolution_data <- rbind(plasticity_first, canalization, plasticity_buffered)
+
+# Plot histograms for plasticity and selection coefficients
+plasticity_histogram <- ggplot(evolution_data, aes(x = Plasticity)) +
+  geom_density(alpha = 1, fill = "gray", position = "identity") +
+  facet_wrap(~ Scenario, scales = "free_y") +
+  labs(title = "Rates of Evolutionary Change: Plasticity", x = "Plasticity", y = "Frequency") +
+  theme_classic(base_size = 20) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "none")
+
+phenotype_histogram <- ggplot(evolution_data, aes(x = Phenotype)) +
+  geom_density(alpha = 1, fill = "gray", position = "identity") +
+  facet_wrap(~ Scenario, scales = "free_y") +
+  labs(title = "Rate of phenotypic evolution", x = "Evolutionary rate", y = "Frequency") +
+  theme_classic(base_size = 20) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "none")
+
+selection_histogram <- ggplot(evolution_data, aes(x = Selection)) +
+  geom_density(alpha = 1, fill = "gray", position = "identity") +
+  facet_wrap(~ Scenario, scales = "free_y") +
+  labs(title = "Selection on plasticity", x = "Selection coefficient", y = "Frequency") +
+  theme_classic(base_size = 20) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "none")
+
+# Combine evolutionary plots
+evolution_plots <- ggarrange(phenotype_histogram, selection_histogram, 
+                             labels = c("", ""), ncol = 1, nrow = 2)
+
+# --- Combine All Plots ---
+Fig1_rev <- ggarrange(reaction_norm_plot, evolution_plots, 
+                      labels = c("A", "B"),
+                      heights = c(.5, 1),
+                      ncol = 1, nrow = 2)
+
+# Display final plot
+print(Fig1_rev)
+
+# Export the comparison plot as PNG
+png("~/Documents/GitHub/PFE_perspective/Fig1_rev.png", 
+    units = "in", width = 12, height = 12, res = 600)
+Fig1_rev
+dev.off()
+
+```
+
+
 Figure 2 simulation of epistatic PFE
 
 ```{r}
