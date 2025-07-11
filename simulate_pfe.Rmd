@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggpubr)
 library(gridExtra)
+library(patchwork)
+library(png)
+library(grid)
 
 ```
 
@@ -18,56 +21,221 @@ Figure 1 diagram
 
 ```{r}
 
-# Simulate data for the three reaction norm scenarios
-set.seed(123)
+# Generate conceptual data frame
+reaction_norm_data <- data.frame(Scenario = c("Genotype", "Genotype", 
+                                              "Genotype", "Genotype", 
+                                              "Genotype", "Genotype",
+                                              "Genotype + environment", "Genotype + environment", 
+                                              "Genotype + environment", "Genotype + environment", 
+                                              "Genotype + environment", "Genotype + environment",
+                                              "Genotype x environment", "Genotype x environment", 
+                                              "Genotype x environment", "Genotype x environment", 
+                                              "Genotype x environment", "Genotype x environment"),
+                                 Environment = c(1,2,1,2,1,2,
+                                                 1,2,1,2,1,2,
+                                                 1,2,1,2,1,2),
+                                 Genotype = c(1,1,2,2,3,3,
+                                              1,1,2,2,3,3,
+                                              1,1,2,2,3,3),
+                                 Phenotype = c(1,1,2,2,3,3,
+                                               1,2,2,3,3,4,
+                                               3,3,2,3,1,3),
+                                 RN = c(0,0,0,0,0,0,
+                                        1,1,1,1,1,1,
+                                        0,0,1,1,2,2),
+                                 Int = c(1,1,2,2,3,3,
+                                         1,1,2,2,3,3,
+                                         3,3,2,2,1,1))
 
-n_lines <- 3
-n_environments <- 5
-environment <- seq(1, n_environments)
-
-# Scenario 1: Genotype
-genotype_only <- data.frame(
-  Environment = rep(environment, n_lines),
-  Genotype = rep(1:n_lines, each = n_environments),
-  Phenotype = rep(seq(0, 2, length.out = n_lines), each = n_environments),
-  Scenario = "Genotype"
-)
-
-# Scenario 2: Genotype + Environment
-genotype_environment <- data.frame(
-  Environment = rep(environment, n_lines),
-  Genotype = rep(1:n_lines, each = n_environments),
-  Phenotype = rep(seq(0, 2, length.out = n_lines), each = n_environments) + 
-              rep(environment, n_lines),
-  Scenario = "Genotype + environment"
-)
-
-# Scenario 3: Genotype x Environment
-genotype_gxe <- data.frame(
-  Environment = rep(environment, n_lines),
-  Genotype = rep(1:n_lines, each = n_environments),
-  Phenotype = rep(seq(0, 2, length.out = n_lines), each = n_environments) + 
-              c(rep(1, n_environments), rep(0, n_environments), rep(-1, n_environments)) * environment,
-  Scenario = "Genotype x environment"
-)
-
-# Combine all scenarios
-reaction_norm_data <- rbind(genotype_only, genotype_environment, genotype_gxe)
-reaction_norm_data$Scenario <- factor(reaction_norm_data$Scenario, 
-                                      levels = c("Genotype", "Genotype + environment", "Genotype x environment"))
-
-# Plot reaction norms
-reaction_norm_plot <- ggplot(reaction_norm_data, aes(x = Environment, y = Phenotype, 
-                                                     group = Genotype)) +
-  geom_line(size = 1.5, color = "gray70") +
-  facet_wrap(~ Scenario, scales = "free_y") +
-  labs(x = "Environment", y = "Phenotype", color = "Genotype") +
+# Create panel A
+reaction_norm_plot <- ggplot(reaction_norm_data, aes(x = Environment, y = Phenotype, group = Genotype)) +
+  geom_line(aes(color = as.factor(RN)), size = 2) +
+  geom_point(data = filter(reaction_norm_data, Environment < 2),
+             aes(shape = as.character(Phenotype)), size = 6, color = "black", show.legend = TRUE) +
+  geom_point(data = filter(reaction_norm_data, Environment < 2),
+             aes(shape = as.character(Phenotype)), color = "white", size = 4, show.legend = TRUE) +
+  facet_wrap(~Scenario, nrow = 1, ncol = 3) +
+  labs(x = "Environment", y = "Phenotype", color = "Reaction \nnorm", fill = "", shape = "Phenotypic \nintercept") +
   theme_classic(base_size = 20) +
   theme(strip.background = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "right",
+        legend.direction = "vertical",
+        legend.box.spacing = unit(2.2, "cm")) +
+  scale_y_continuous(expand = expansion(mult = 0.2), limits = c(1,4)) +
+  scale_color_manual(values = c("black", "gray40", "gray80")) +
+  guides(color = guide_legend(override.aes = list(
+    shape = NA,      # no point shape
+    linetype = 1,    # solid line
+    size = 2         # match line size
+)))
 
+reaction_norm_plot
+
+```
+
+```{r}
+
+library(tibble)
+library(ggforce)
+
+
+# Create base structure with adjusted coordinates
+pb_df <- tibble::tribble(
+  ~Var, ~Arch, ~Group, ~Shape, ~Fill, ~Size, ~x, ~y, ~alpha,
+  
+  # Monogenic (centered and evenly spaced)
+  "Genotype", "Monogenic \n(1 gene)", NA, "3", "0", 3, 0, 3, 1,
+  "Genotype", "Monogenic \n(1 gene)", NA, "1", "0", 3, 0, 1, 1,
+  "Genotype", "Monogenic \n(1 gene)", NA, "2", "0", 3, 0, 2, 1,
+
+  "Genotype + environment", "Monogenic \n(1 gene)", NA, "3", "1", 3, 1, 3, 1,
+  "Genotype + environment", "Monogenic \n(1 gene)", NA, "1", "1", 3, 1, 1, 1,
+  "Genotype + environment", "Monogenic \n(1 gene)", NA, "2", "1", 3, 1, 2, 1,
+
+  "Genotype x environment", "Monogenic \n(1 gene)", NA, "3", "0", 3, 0, 3, 1,
+  "Genotype x environment", "Monogenic \n(1 gene)", NA, "1", "2", 3, 2, 1, 1,
+  "Genotype x environment", "Monogenic \n(1 gene)", NA, "2", "1", 3, 1, 2, 1,
+  
+  # Epistatic (centered and evenly spaced)
+  "Genotype", "Epistatic \n(1 gene)", NA, "3", "0", 3, 0, 3, 1,
+  "Genotype", "Epistatic \n(1 gene)", NA, "1", "0", 3, 0, 1, 1,
+  "Genotype", "Epistatic \n(1 gene)", NA, "2", "0", 3, 0, 2, 1,
+
+  "Genotype + environment", "Epistatic \n(1 gene)", NA, "3", "1", 3, 1, 3, 1,
+  "Genotype + environment", "Epistatic \n(1 gene)", NA, "1", "3", 3, 1, 1, 1,
+  "Genotype + environment", "Epistatic \n(1 gene)", NA, "2", "2", 3, 1, 2, 1,
+
+  "Genotype x environment", "Epistatic \n(1 gene)", NA, "3", "0", 3, 0, 3, 1,
+  "Genotype x environment", "Epistatic \n(1 gene)", NA, "1", "4", 3, 2, 1, 1,
+  "Genotype x environment", "Epistatic \n(1 gene)", NA, "2", "2", 3, 1, 2, 1,
+  
+  # Polygenic - Arranged into equilateral triangle layout
+  # Group centers at (1,2), (2,3.73), (3,2) for triangle vertices
+  # Internal points grouped tightly around each center
+
+  # G1
+  "Genotype", "Polygenic \n(3 genes)", "G1", "3", "0", 1, 0, 3.15, 1,
+  "Genotype", "Polygenic \n(3 genes)", "G1", "3", "0", 1, -.15, 2.85, 1,
+  "Genotype", "Polygenic \n(3 genes)", "G1", "3", "0", 1, 0.15, 2.85, 1,
+
+  # G2
+  "Genotype", "Polygenic \n(3 genes)", "G2", "3", "0", 1, 0, 2.15, 1,
+  "Genotype", "Polygenic \n(3 genes)", "G2", "1", "0", 1, -.15, 1.85, 1,
+  "Genotype", "Polygenic \n(3 genes)", "G2", "2", "0", 1, 0.15, 1.85, 1,
+
+  # G3
+  "Genotype", "Polygenic \n(3 genes)", "G3", "1", "0", 1, 0, 1.15, 1,
+  "Genotype", "Polygenic \n(3 genes)", "G3", "1", "0", 1, -.15, 0.85, 1,
+  "Genotype", "Polygenic \n(3 genes)", "G3", "1", "0", 1, 0.15, 0.85, 1,
+
+  # G+E
+  "Genotype + environment", "Polygenic \n(3 genes)", "G1", "3", "1", 1, 1, 3.15, 1,
+  "Genotype + environment", "Polygenic \n(3 genes)", "G1", "3", "1", 1, 1.15, 2.85, 1,
+  "Genotype + environment", "Polygenic \n(3 genes)", "G1", "3", "1", 1, 0.85, 2.85, 1,
+
+  "Genotype + environment", "Polygenic \n(3 genes)", "G2", "3", "1", 1, 1, 2.15, 1,
+  "Genotype + environment", "Polygenic \n(3 genes)", "G2", "1", "1", 1, 0.85, 1.85, 1,
+  "Genotype + environment", "Polygenic \n(3 genes)", "G2", "2", "1", 1, 1.15, 1.85, 1,
+
+  "Genotype + environment", "Polygenic \n(3 genes)", "G3", "1", "1", 1, 1, 1.15, 1,
+  "Genotype + environment", "Polygenic \n(3 genes)", "G3", "1", "1", 1, 1.15, 0.85, 1,
+  "Genotype + environment", "Polygenic \n(3 genes)", "G3", "1", "1", 1, 0.85, 0.85, 1,
+
+  # GxE
+  "Genotype x environment", "Polygenic \n(3 genes)", "G1", "3", "0", 1, 0, 3.15, 1,
+  "Genotype x environment", "Polygenic \n(3 genes)", "G1", "3", "0", 1, -.15, 2.85, 1,
+  "Genotype x environment", "Polygenic \n(3 genes)", "G1", "3", "0", 1, 0.15, 2.85, 1,
+
+  "Genotype x environment", "Polygenic \n(3 genes)", "G2", "1", "2", 1, 2.0, 1.15, 1,
+  "Genotype x environment", "Polygenic \n(3 genes)", "G2", "1", "2", 1, 1.85, 0.85, 1,
+  "Genotype x environment", "Polygenic \n(3 genes)", "G2", "1", "2", 1, 2.15, 0.85, 1,
+
+  "Genotype x environment", "Polygenic \n(3 genes)", "G3", "3", "0", 1, 1.0, 2.15, 1,
+  "Genotype x environment", "Polygenic \n(3 genes)", "G3", "1", "2", 1, 0.85, 1.85, 1,
+  "Genotype x environment", "Polygenic \n(3 genes)", "G3", "2", "1", 1, 1.15, 1.85, 1
+)
+
+# Circle outlines for Polygenic groups
+poly_circles <- pb_df %>%
+  filter(!is.na(Group)) %>%
+  group_by(Var, Arch, Group) %>%
+  summarise(x0 = mean(x), y0 = mean(y), r = .4, .groups = "drop")
+
+# Shape map
+shape_map <- c("3" = 22, "1" = 21, "2" = 24)
+
+# Set factor order for facets
+pb_df$Arch <- factor(pb_df$Arch, levels = c("Monogenic \n(1 gene)", "Polygenic \n(3 genes)", "Epistatic \n(1 gene)"))
+poly_circles$Arch <- factor(poly_circles$Arch, levels = c("Monogenic \n(1 gene)", "Polygenic \n(3 genes)", "Epistatic \n(1 gene)"))
+
+# Plot
+pb_df$Fill <- factor(pb_df$Fill, levels = c("0", "1", "2", "3", "4"))
+pb_df$Shape <- factor(pb_df$Shape, levels = c("1", "2", "3"))
+
+Fig1B_rev <- ggplot(pb_df, aes(x = x, y = y, fill = Fill)) +
+  geom_circle(data = poly_circles, aes(x0 = x0, y0 = y0, r = r),
+              inherit.aes = FALSE, color = "black", linetype = "dotted", size = .75) +
+  geom_point(aes(shape = Shape), size = 6, color = "black", stroke = 1.2) +
+  scale_shape_manual(values = shape_map) +
+  scale_fill_manual(
+    values = c("0" = "black", "1" = "gray40", "2" = "gray80", "3" = "gray95", "4" = "white"),
+    drop = FALSE
+  ) +
+  facet_grid(Arch ~ Var) +
+  labs(shape = "Phenotypic \nintercept \neffect", fill = "Reaction \nnorm \neffect", size = "Allele \neffect \nstrength",
+       x = "Reaction norm", y = "Phenotypic intercept") +
+  theme_classic(base_size = 20) +
+  scale_size_manual(values = c(3,6)) +
+  theme(
+    strip.text.y = element_text(angle = 270),
+    legend.position = "right",
+    legend.direction = "vertical",
+    strip.background = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.5)) +
+  guides(fill = guide_legend(override.aes = list(
+    shape = 21,
+    size = 4.5,
+    linetype = 1)),
+    shape = guide_legend(override.aes = list(
+    size = 4.5))) +
+  scale_x_continuous(breaks = c(0, 1, 2), limits = c(-.8, 2.7)) +
+  scale_y_continuous(breaks = c(1, 2, 3), limits = c(0.3, 3.7))
+
+Fig1B_rev
+
+```
+
+```{r}
+
+# Arrange revised Figure 1A and 1B panels
+Fig1_rev <- ggarrange(reaction_norm_plot, Fig1B_rev,
+                      labels = c("A", "B"),
+                      heights = c(.32,.68),
+                      ncol = 1, nrow = 2,
+                      align = "hv")
+
+Fig1_rev
+
+# Save figure
+png("~/Documents/GitHub/PFE_perspective/Fig1_rev.png",
+    units = "in", width = 12, height = 14, res = 600)
+Fig1_rev
+dev.off()
+
+```
+
+```{r}
+# Save figure
+png("~/Documents/GitHub/PFE_perspective/Fig1A_rev.png", 
+    units = "in", width = 6, height = 12, res = 600)
+reaction_norm_plot
+dev.off()
+
+```
+
+```{r}
 # Simulate data for evolutionary change
 n <- 1000
 
@@ -149,7 +317,6 @@ Fig1_rev
 dev.off()
 
 ```
-
 
 Figure 2 simulation of epistatic PFE
 
@@ -256,12 +423,145 @@ temperature_results <- data.frame(
   scenario = rep(c("PFE", "Neutral plasticity"), each = generations)
 )
 
+```
+
+Simulation with logistic selection
+
+```{r}
+
+# Parameters
+set.seed(42)
+generations <- 100
+population_size <- 1000
+recomb_rate <- 0.02
+drift_sd <- 0.005
+temperature <- seq(20, 35, length.out = generations) + rnorm(generations, sd = 0.5)
+
+# Initial haplotype frequencies
+freqs <- data.frame(
+  generation = 1:generations,
+  axbx = 0.0,
+  axby = 0.10,
+  other = 0.90
+)
+
+# Logistic function
+logistic_trend <- function(t, midpoint, steepness, start_val, end_val) {
+  start_val + (end_val - start_val) / (1 + exp(-steepness * (t - midpoint)))
+}
+
+# Shared logistic curve for axbx in both scenarios, delayed increase
+shared_axbx_curve <- function(t) {
+  logistic_trend(t, midpoint = 60, steepness = 0.11, start_val = -0.15, end_val = 0.15)
+}
+
+# Selection coefficients
+selection_scenario1 <- function(t) {
+  list(
+    axbx = shared_axbx_curve(t),
+    axby = logistic_trend(t, midpoint = 60, steepness = 0.44, start_val = 0.045, end_val = -0.045)
+  )
+}
+
+selection_scenario2 <- function(t) {
+  list(
+    axbx = shared_axbx_curve(t),
+    axby = 0
+  )
+}
+
+selection_scenario3 <- function(t) {
+  list(
+    axbx = shared_axbx_curve(t),
+    axby = logistic_trend(t, midpoint = 60, steepness = 0.055, start_val = 0.2, end_val = -0.045)
+  )
+}
+
+# Simulation function
+simulate_haplotypes <- function(selection_function) {
+  results <- freqs
+  recombination_events <- numeric(generations)
+
+  for (t in 2:generations) {
+    sel <- selection_function(t)
+
+    recombination_events[t] <- recomb_rate * results$axby[t-1] * results$other[t-1]
+    new_axbx <- recombination_events[t]
+
+    axbx_fit <- results$axbx[t-1] + sel$axbx * results$axbx[t-1] + new_axbx
+    axby_fit <- results$axby[t-1] + sel$axby * results$axby[t-1] - new_axbx
+
+    axbx_fit <- axbx_fit + rnorm(1, mean = 0, sd = drift_sd)
+    axby_fit <- axby_fit + rnorm(1, mean = 0, sd = drift_sd)
+
+    other_fit <- max(0, 1 - axbx_fit - axby_fit)
+    total <- axbx_fit + axby_fit + other_fit
+
+    results$axbx[t] <- max(0, axbx_fit / total)
+    results$axby[t] <- max(0, axby_fit / total)
+    results$other[t] <- max(0, other_fit / total)
+  }
+
+  results$recombination <- recombination_events
+  results
+}
+
+# Run simulations
+scenario1 <- simulate_haplotypes(selection_scenario1)
+scenario1$scenario <- "Moderately adaptive plasticity"
+
+scenario2 <- simulate_haplotypes(selection_scenario2)
+scenario2$scenario <- "Neutral plasticity"
+
+scenario3 <- simulate_haplotypes(selection_scenario3)
+scenario3$scenario <- "Strongly adaptive plasticity"
+
+# Annotate selection and recombination
+scenario1 <- scenario1 %>%
+  mutate(sel_axbx = map_dbl(1:generations, ~ selection_scenario1(.x)$axbx),
+         sel_axby = map_dbl(1:generations, ~ selection_scenario1(.x)$axby))
+
+scenario2 <- scenario2 %>%
+  mutate(sel_axbx = map_dbl(1:generations, ~ selection_scenario2(.x)$axbx),
+         sel_axby = map_dbl(1:generations, ~ selection_scenario2(.x)$axby))
+
+scenario3 <- scenario3 %>%
+  mutate(sel_axbx = map_dbl(1:generations, ~ selection_scenario3(.x)$axbx),
+         sel_axby = map_dbl(1:generations, ~ selection_scenario3(.x)$axby))
+
+# Combine results
+results <- bind_rows(scenario1, scenario2, scenario3) %>%
+  pivot_longer(cols = c(axbx, axby, other), names_to = "haplotype", values_to = "frequency")
+
+# Additional outputs
+selection_results <- results %>%
+  filter(haplotype == "axbx") %>%
+  select(generation, scenario, sel_axbx, sel_axby) %>%
+  distinct()
+
+recombination_results <- results %>%
+  filter(haplotype == "axbx") %>%
+  select(generation, scenario, recombination) %>%
+  distinct()
+
+temperature_results <- data.frame(
+  generation = 1:generations,
+  temperature = temperature,
+  scenario = rep(c("Strongly adaptive plasticity", "Moderately adaptive plasticity", 
+                   "Neutral plasticity"), each = generations)
+)
+
+```
+
+
+```{r}
+
 # Plotting
 library(patchwork)
 
 # Temperature over time
 plot_temp <- ggplot(temperature_results, aes(x = generation, y = temperature)) +
-  geom_line(size = 1) +
+  geom_line(size = 1.5) +
   facet_wrap(~scenario, nrow = 2) +
   theme_classic(base_size = 20) +
   theme(strip.background = element_blank()) +
@@ -269,51 +569,88 @@ plot_temp <- ggplot(temperature_results, aes(x = generation, y = temperature)) +
   theme(legend.position = "none")
 
 # Recombination events leading to axbx
+recombination_results$scenario <- factor(recombination_results$scenario, 
+                                         levels = c("Neutral plasticity", 
+                                                    "Moderately adaptive plasticity",
+                                                    "Strongly adaptive plasticity"))
+
 plot_recomb <- ggplot(recombination_results, aes(x = generation, y = recombination)) +
-  geom_line(size = 1) +
-  facet_wrap(~scenario, nrow = 2) +
+  geom_line(size = 1.5) +
+  facet_wrap(~scenario, nrow = 3) +
   theme_classic(base_size = 20) +
   theme(strip.background = element_blank()) +
-  labs(title = "axbx formed by recombination", y = "Recombination events", x = "Generation") +
+  labs(y = "Recombination generating axbx", x = "Generation") +
   theme(legend.position = "none")
 
 # Frequencies of haplotypes
-plot_haplotypes <- ggplot(results, aes(x = generation, y = frequency, color = haplotype)) +
-  geom_line(size = 1) +
-  facet_wrap(~scenario, nrow = 2) +
+results$scenario <- factor(results$scenario,
+                           levels = c("Neutral plasticity",
+                                      "Moderately adaptive plasticity",
+                                      "Strongly adaptive plasticity"))
+
+results$haplotype <- ifelse(results$haplotype == "axby", "axby (plastic)",
+                            ifelse(results$haplotype == "axbx", "axbx (fixed)", "Other"))
+
+results$Focal <- ifelse(results$haplotype == "Other","Other", "Focal")
+
+plot_haplotypes <- ggplot(filter(results, haplotype %in% c("axby (plastic)", "axbx (fixed)")), 
+                          aes(x = generation, y = frequency, color = haplotype)) +
+  geom_line(size = 1.5) +
+  facet_wrap(~scenario, nrow = 3) +
   theme_classic(base_size = 20) +
-  theme(strip.background = element_blank()) +
-  labs(y = "Frequency", x = "Generation", , color = "Haplotype") +
-  scale_color_manual(values = c("axbx" = "red", "axby" = "orange", "other" = "gray")) +
-  theme(legend.position = "top")
+  labs(y = "Frequency", x = "Generation", color = "Haplotype") +
+  scale_color_manual(values = c("axbx (fixed)" = "black", "axby (plastic)" = "gray80")) +
+  theme(strip.background = element_blank(),
+        legend.position = "top")
+
+plot_haplotypes
 
 # Selection coefficients
-plot_selection <- ggplot(selection_results, aes(x = generation)) +
-  geom_smooth(aes(y = sel_axbx, color = "axbx"), size = 1, se = FALSE, span = .1) +
-  geom_smooth(aes(y = sel_axby, color = "axby"), size = 1, se = FALSE, span = .1) +
-  facet_wrap(~scenario, nrow = 2) +
+selection_results$scenario <- factor(selection_results$scenario,
+                                     levels = c("Neutral plasticity",
+                                                "Moderately adaptive plasticity",
+                                                "Strongly adaptive plasticity"))
+
+plot_selection <- ggplot(selection_results, aes(x = generation, color = haplotype)) +
+  geom_smooth(aes(y = sel_axbx, color = "axbx (fixed)"), size = 1.5, se = FALSE, span = .1) +
+  geom_smooth(aes(y = sel_axby, color = "axby (plastic)"), size = 1.5, se = FALSE, span = .1) +
+  facet_wrap(~scenario, nrow = 3) +
   theme_classic(base_size = 20) +
-  theme(strip.background = element_blank()) +
+  theme(strip.background = element_blank(),
+        legend.position = "top") +
   labs( y = "Selection coefficient", x = "Generation", color = "Haplotype") +
-  scale_color_manual(values = c("axbx" = "red", "axby" = "orange")) +
-  theme(legend.position = "top")
+  scale_color_manual(values = c("axbx (fixed)" = "black", "axby (plastic)" = "gray80"))
+
+plot_selection
 
 library(ggpubr)
 
 # Combine plots into a grid with ggarrange
+Fig4D <- readPNG("Fig4D_rev_crop.png")
+Fig4Dg <- rasterGrob(Fig4D, interpolate = TRUE)
+
+Fig4Dg <- ggplot() +
+  annotation_custom(Fig4Dg) +
+  ggtitle("Coalescent schematic of \nmoderately adaptive \nplasticity scenario") +
+  theme_void(base_size = 20) +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(t = 0, r = 30, b = 0, l = 90))  # leftward nudge
+
 final_plot <- ggarrange(
-  plot_temp, 
+  plot_selection,
   plot_recomb, 
-  plot_selection, 
-  plot_haplotypes, 
+  plot_haplotypes,
+  Fig4Dg,
   ncol = 2, nrow = 2, 
   labels = c("A", "B", "C", "D")
 )
 
+final_plot
+
 # Display the combined plot
 # Export the comparison plot as PNG
-png("~/Documents/GitHub/PFE_perspective/Fig_2rev.png", 
-    units = "in", width = 12, height = 12, res = 600)
+png("~/Documents/GitHub/PFE_perspective/Fig4_rev_log.png", 
+    units = "in", width = 12, height = 14, res = 600)
 final_plot
 dev.off()
 
@@ -735,6 +1072,152 @@ Extract specific newick trees from sampled geneologies and create mock allele fr
 sed -n "5p" newick_trees.txt > gen5.newick
 
 for i in {1..20}; do echo "$RANDOM / 32768" | bc -l; done > freq.txt
+
+```
+
+
+Revised Fig. 3
+
+Title: Factors shaping selection on phenotypic plasticity with empirical support. Add a little pie chart showing what proportion of studies confirm or reject the model in the top right corner of each panel.
+
+Panel A - y = selection coefficient on plasticity, x = environmental stochasticity -> predictability. Absolute variance goes 3,2,1,0,1,2,3. Logistical (?) curves that increase in slope with greater plasticity. Level of plsticity is based on shade (lighter = more plastic). Cartoon of stochastic variance and predictable variance above.
+
+Panel B - y = selection coefficient, x = organismal condition. Greater plasticity shows stronger slopes, logistically increasing selection with improved condition. Cartoon of organismal condition and energetic availability. Cite appropriate condition-dependence example for plasticity.
+
+Panel C - x axis = phenotypic level of secondary trait, y = selection coefficient on plasticity. Greater plasticity results in more negative selection as secondary trait increases. Above, a cartoon of a famous fitness trade off in phenotypes or in an example of a plasticity tradeoff with the citation.
+
+Panel D - y = selection coefficient, x = genetic correlation, assuming both traits are under positive selection. Secondary trait is held constant, as is its selection coefficient. Should be a negative logistic curve. Greater plasticity increases the slope and intensity of the curve. Cartoon of alleles that have opposing pleiotropic effects on plasticity and a secondary trait.
+
+```{r}
+
+env <- seq(-1, 1, length.out = 300)
+
+# Logistic functions for each plasticity level
+logistic <- function(x, lower, upper, slope, midpoint) {
+  lower + (upper - lower) / (1 + exp(-slope * (x - midpoint)))
+}
+
+curve_p0 <- logistic(env, lower = -0.33, upper = 0.33, slope = 5, midpoint = 0)  # inverted
+curve_p1 <- logistic(env, lower = -.67, upper = .67, slope = 5, midpoint = 0.15)
+curve_p2 <- logistic(env, lower = -1, upper = 1, slope = 5, midpoint = 0.30)
+
+# Combine into one data frame
+panel_a <- bind_rows(
+  data.frame(env = (env+1)/2, plasticity = 1, selection = curve_p0),
+  data.frame(env = (env+1)/2, plasticity = 2, selection = curve_p1),
+  data.frame(env = (env+1)/2, plasticity = 3, selection = curve_p2)
+)
+
+panel_a$shade <- factor(panel_a$plasticity)
+
+# Plot
+plot_a <- ggplot(panel_a, aes(x = env, y = selection, color = shade, group = shade)) +
+  geom_line(size = 2) +
+  scale_color_manual(values = c("gray20", "gray50", "gray80")) +
+  scale_x_continuous(labels = function(x) abs(x)) +
+  labs(
+    x = "Environmental predictability",
+    y = "Relative fitness",
+    subtitle = "Predictable vs. stochastic environments",
+    color = "Reaction norm"
+  ) +
+  theme_classic(base_size = 20) +
+  theme(legend.position = c(0.33,0.75))  +
+  scale_y_continuous(limits = c(-1,1))
+
+plot_a
+
+cond <- seq(-1, 1, length.out = 300)
+
+curve_p0c <- logistic(cond, lower = -.33, upper = .33, slope = 4, midpoint = 0)
+curve_p1c <- logistic(cond, lower = -.67, upper = .67, slope = 4, midpoint = 0)
+curve_p2c <- logistic(cond, lower = -1, upper = 1, slope = 4, midpoint = 0)
+
+# Combine into one data frame
+panel_b <- bind_rows(
+  data.frame(cond = (cond + 1)/2, plasticity = 0, selection = curve_p0c),
+  data.frame(cond = (cond + 1)/2, plasticity = 1, selection = curve_p1c),
+  data.frame(cond = (cond + 1)/2, plasticity = 2, selection = curve_p2c)
+)
+
+panel_b$shade <- factor(panel_b$plasticity)
+
+plot_b <- ggplot(panel_b, aes(x = cond, y = selection, color = shade, group = shade)) +
+  geom_line(size = 2) +
+  scale_color_manual(values = c("gray20", "gray50", "gray80")) +
+  labs(x = "Organismal condition",
+       y = "Relative fitness",
+       subtitle = "Condition dependence") +
+  theme_classic(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(-1,1))
+
+trait <- - seq(-1, 1, length.out = 300)
+
+curve_p0t <- -logistic(trait, lower = -0.33, upper = 0.33, slope = 5, midpoint = 0)
+curve_p1t <- -logistic(trait, lower = -.67, upper = .67, slope = 5, midpoint = 0)
+curve_p2t <- -logistic(trait, lower = -1, upper = 1, slope = 5, midpoint = 0)
+
+# Combine into one data frame
+panel_c <- bind_rows(
+  data.frame(trait = trait + 2, plasticity = 1, selection = curve_p0),
+  data.frame(trait = trait + 2, plasticity = 2, selection = curve_p1),
+  data.frame(trait = trait + 2, plasticity = 3, selection = curve_p2)
+)
+
+panel_c$shade <- factor(panel_c$plasticity)
+
+plot_c <- ggplot(panel_c, aes(x = trait, y = selection, color = shade, group = shade)) +
+  geom_line(size = 2) +
+  scale_color_manual(values = c("gray20", "gray50", "gray80")) +
+  labs(x = "Secondary trait phenotype",
+       y = "Relative fitness",
+       subtitle = "Fitness tradeoff") +
+  theme_classic(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(-1,1))
+
+cor <- seq(-1, 1, length.out = 300)
+
+curve_p0r <- logistic(cor, lower = 0, upper = 0.33, slope = 5, midpoint = 0)  # inverted
+curve_p1r <- logistic(cor, lower = 0, upper = .67, slope = 5, midpoint = 0)
+curve_p2r <- logistic(cor, lower = 0, upper = 1, slope = 5, midpoint = 0)
+
+# Combine into one data frame
+panel_d <- bind_rows(
+  data.frame(cor = cor, plasticity = 1, selection = curve_p0r),
+  data.frame(cor = cor, plasticity = 2, selection = curve_p1r),
+  data.frame(cor = cor, plasticity = 3, selection = curve_p2r)
+)
+
+panel_d$shade <- factor(panel_d$plasticity)
+
+plot_d <- ggplot(panel_d, aes(x = cor, y = selection, color = shade, group = shade)) +
+  geom_line(size = 2) +
+  scale_color_manual(values = c("gray20", "gray50", "gray80")) +
+  labs(x = "Genetic correlation",
+       y = "Relative fitness",
+       subtitle = "Pleiotropy and linkage") +
+  theme_classic(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(-1,1))
+
+Fig3_rev <- ggarrange(
+  plot_a,
+  plot_b, 
+  plot_c,
+  plot_d,
+  ncol = 2, nrow = 2, 
+  labels = c("A", "B", "C", "D")
+)
+
+Fig3_rev
+
+# Export the comparison plot as PNG
+png("~/Documents/GitHub/PFE_perspective/Fig3_rev.png", 
+    units = "in", width = 12, height = 10, res = 600)
+Fig3_rev
+dev.off()
 
 ```
 

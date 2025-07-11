@@ -1,0 +1,132 @@
+initialize() {
+    // Set up the simulation parameters
+    initializeSLiMOptions(keepPedigrees=T);
+    initializeMutationRate(1e-4);
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    initializeMutationType("m2", 0.5, "n", 0.0, 0.2);
+    initializeGenomicElementType("g1", c(m1, m2), c(1, 1));
+    
+    initializeGenomicElement(g1, 0, 1);
+    initializeGenomicElement(g1, 2, 3);
+    
+    initializeRecombinationRate(1e-8);
+    
+    // Environment parameters
+    defineConstant("INDUCTION_THRESHOLD", 5.0);
+    defineConstant("INITIAL_ENV_MEAN", 2.0);
+    defineConstant("ENV_SHIFT_RATE", 0.05);
+    
+    // Tracking variables
+    defineGlobal("CURRENT_ENV_MEAN", INITIAL_ENV_MEAN);
+    defineGlobal("CONSTITUTIVE_MUTATION_ARISEN", F);
+}
+
+1 early() {
+    sim.addSubpop("p1", 500);
+}
+
+s1 10:10000 early() {
+    // Environment shifting
+    new_mean = CURRENT_ENV_MEAN + ENV_SHIFT_RATE;
+    if (new_mean < INDUCTION_THRESHOLD) {
+        CURRENT_ENV_MEAN = new_mean;
+    } else {
+        CURRENT_ENV_MEAN = INDUCTION_THRESHOLD;
+    }
+    catn("Tick " + community.tick + ": Environment mean = " + CURRENT_ENV_MEAN);
+}
+
+modifyChild() {
+    // Environmental effects
+    env = rnorm(1, CURRENT_ENV_MEAN, 1.0);
+    
+    // Count mutations
+    maternal_muts = parent1.genomes[0].mutations;
+    paternal_muts = parent2.genomes[0].mutations;
+    
+    maternal_count = 0;
+    paternal_count = 0;
+    
+    for (mut in maternal_muts) {
+        if (mut.mutationType == m2 & (mut.position >= 0 & mut.position <= 1 | mut.position >= 2 & mut.position <= 3)) {
+            maternal_count = maternal_count + 1;
+        }
+    }
+    
+    for (mut in paternal_muts) {
+        if (mut.mutationType == m2 & (mut.position >= 0 & mut.position <= 1 | mut.position >= 2 & mut.position <= 3)) {
+            paternal_count = paternal_count + 1;
+        }
+    }
+    
+    genetic_value = (maternal_count + paternal_count) / 4.0;
+    
+    // Determine phenotype - using if/else instead of ternary operator
+    if (CONSTITUTIVE_MUTATION_ARISEN) {
+        if (genetic_value > 0.7) {
+            phenotype = 1;
+        } else {
+            phenotype = 0;
+        }
+    } else {
+        if (env > INDUCTION_THRESHOLD) {
+            phenotype = 1;
+        } else {
+            phenotype = 0;
+        }
+    }
+    
+    if (phenotype == 1) {
+        env_distance = abs(CURRENT_ENV_MEAN - INDUCTION_THRESHOLD);
+        fitness_effect = 1.0 + (1.0 - env_distance/INDUCTION_THRESHOLD) * 0.5;
+        child.fitnessScaling = fitness_effect;
+    }
+    
+    return T;
+}
+
+mutationEffect(m2) {
+    if (mut.selectionCoeff > 0.5) {
+        defineGlobal("CONSTITUTIVE_MUTATION_ARISEN", T);
+        catn("Tick " + community.tick + ": Constitutive mutation arose at position " + mut.position);
+        return 1.5;
+    }
+    return 1.0;
+}
+
+s2 10:10000 late() {
+    plastic_count = 0;
+    constitutive_count = 0;
+    
+    for (ind in p1.individuals) {
+        muts = c(ind.genomes[0].mutations, ind.genomes[1].mutations);
+        m2_count = 0;
+        has_plastic = F;
+        
+        for (mut in muts) {
+            if (mut.mutationType == m2 & (mut.position >= 0 & mut.position <= 1 | mut.position >= 2 & mut.position <= 3)) {
+                m2_count = m2_count + 1;
+                has_plastic = T;
+            }
+        }
+        
+        if (has_plastic) plastic_count = plastic_count + 1;
+        if (m2_count > 1) constitutive_count = constitutive_count + 1;
+    }
+    
+    catn("Tick " + community.tick +
+         ": Plastic individuals = " + plastic_count + "/" + p1.individualCount + " (" + (plastic_count/p1.individualCount) +
+         "), Constitutive individuals = " + constitutive_count + "/" + p1.individualCount + " (" + (constitutive_count/p1.individualCount) +
+         "), Environment mean = " + CURRENT_ENV_MEAN);
+    
+    if (CONSTITUTIVE_MUTATION_ARISEN) {
+        if (constitutive_count / p1.individualCount > 0.9) {
+            catn("Constitutive phenotype fixed at tick " + community.tick);
+            sim.simulationFinished();
+        }
+    }
+}
+
+10000 late() {
+    sim.simulationFinished();
+}
