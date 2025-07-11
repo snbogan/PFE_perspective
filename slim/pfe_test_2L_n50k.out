@@ -1,0 +1,279 @@
+// Initial random seed:
+783515293010256152
+
+// RunInitializeCallbacks():
+initializeSLiMOptions(keepPedigrees = T);
+initializeMutationRate(1e-06);
+initializeMutationType(1, 0.5, "n", 0, 0.2);
+initializeMutationType(2, 0.5, "n", 0, 0.2);
+initializeGenomicElementType(1, c(m1, m2), c(1, 1));
+initializeGenomicElement(g1, 0, 0);
+initializeGenomicElement(g1, 1, 1);
+initializeRecombinationRate(1e-08);
+
+// Starting run at tick <start>:
+1 
+
+Tick 10: Environment mean = 1.0005
+Tick 10: Plastic = 19117/50000 (0.382), Constitutive = 0/50000 (0.000), Non-expressing = 30883/50000 (0.618), Env = 1.00
+Tick 11: Environment mean = 1.001
+Tick 11: Plastic = 20718/50000 (0.414), Constitutive = 0/50000 (0.000), Non-expressing = 29282/50000 (0.586), Env = 1.00
+Tick 12: Environment mean = 1.0015
+Tick 12: Plastic = 22698/50000 (0.454), Constitutive = 0/50000 (0.000), Non-expressing = 27302/50000 (0.546), Env = 1.00
+Tick 13: Environment mean = 1.002
+Tick 13: Plastic = 24869/50000 (0.497), Constitutive = 1/50000 (0.000), Non-expressing = 25130/50000 (0.503), Env = 1.00
+Tick 14: Environment mean = 1.0025
+Tick 14: Plastic = 27186/50000 (0.544), Constitutive = 0/50000 (0.000), Non-expressing = 22814/50000 (0.456), Env = 1.00
+Tick 15: Environment mean = 1.003
+Tick 15: Plastic = 29411/50000 (0.588), Constitutive = 0/50000 (0.000), Non-expressing = 20589/50000 (0.412), Env = 1.00
+Tick 16: Environment mean = 1.0035
+Tick 16: Plastic = 31875/50000 (0.637), Constitutive = 0/50000 (0.000), Non-expressing = 18125/50000 (0.362), Env = 1.00
+Tick 17: Environment mean = 1.004
+Tick 17: Plastic = 34278/50000 (0.686), Constitutive = 0/50000 (0.000), Non-expressing = 15722/50000 (0.314), Env = 1.00
+Tick 18: Environment mean = 1.0045
+Tick 18: Plastic = 36507/50000 (0.730), Constitutive = 1/50000 (0.000), Non-expressing = 13492/50000 (0.270), Env = 1.00
+Tick 19: Environment mean = 1.005
+Tick 19: Plastic = 39057/50000 (0.781), Constitutive = 0/50000 (0.000), Non-expressing = 10943/50000 (0.219), Env = 1.00
+Tick 20: Environment mean = 1.0055
+Tick 20: Plastic = 41191/50000 (0.824), Constitutive = 1/50000 (0.000), Non-expressing = 8808/50000 (0.176), Env = 1.01
+Tick 21: Environment mean = 1.006
+Tick 21: Plastic = 43089/50000 (0.862), Constitutive = 3/50000 (0.000), Non-expressing = 6908/50000 (0.138), Env = 1.01
+Tick 22: Environment mean = 1.0065
+Tick 22: Plastic = 44867/50000 (0.897), Constitutive = 2/50000 (0.000), Non-expressing = 5131/50000 (0.103), Env = 1.01
+Tick 23: Environment mean = 1.007
+Tick 23: Plastic = 46224/50000 (0.924), Constitutive = 3/50000 (0.000), Non-expressing = 3773/50000 (0.075), Env = 1.01
+Tick 24: Environment mean = 1.0075
+Tick 24: Plastic = 47242/50000 (0.945), Constitutive = 2/50000 (0.000), Non-expressing = 2756/50000 (0.055), Env = 1.01
+Tick 25: Environment mean = 1.008
+Tick 25: Plastic = 48108/50000 (0.962), Constitutive = 0/50000 (0.000), Non-expressing = 1892/50000 (0.038), Env = 1.01
+Tick 26: Environment mean = 1.0085
+Tick 26: Plastic = 48724/50000 (0.974), Constitutive = 0/50000 (0.000), Non-expressing = 1276/50000 (0.026), Env = 1.01
+Tick 27: Environment mean = 1.009
+Tick 27: Plastic = 49106/50000 (0.982), Constitutive = 0/50000 (0.000), Non-expressing = 894/50000 (0.018), Env = 1.01
+Tick 28: Environment mean = 1.0095
+Tick 28: Plastic = 49446/50000 (0.989), Constitutive = 1/50000 (0.000), Non-expressing = 553/50000 (0.011), Env = 1.01
+Tick 29: Environment mean = 1.01
+Tick 29: Plastic = 49650/50000 (0.993), Constitutive = 3/50000 (0.000), Non-expressing = 347/50000 (0.007), Env = 1.01
+Tick 30: Environment mean = 1.0105
+Tick 30: Plastic = 49788/50000 (0.996), Constitutive = 2/50000 (0.000), Non-expressing = 210/50000 (0.004), Env = 1.01
+Tick 31: Environment mean = 1.011
+Tick 31: Plastic = 49858/50000 (0.997), Constitutive = 2/50000 (0.000), Non-expressing = 140/50000 (0.003), Env = 1.01
+Tick 32: Environment mean = 1.0115
+Tick 32: Plastic = 49914/50000 (0.998), Constitutive = 3/50000 (0.000), Non-expressing = 83/50000 (0.002), Env = 1.01
+Tick 33: Environment mean = 1.012
+Tick 33: Plastic = 49956/50000 (0.999), Constitutive = 1/50000 (0.000), Non-expressing = 43/50000 (0.001), Env = 1.01
+Tick 34: Environment mean = 1.0125
+Tick 34: Plastic = 49975/50000 (1.000), Constitutive = 1/50000 (0.000), Non-expressing = 24/50000 (0.000), Env = 1.01
+Tick 35: Environment mean = 1.013
+Tick 35: Plastic = 49981/50000 (1.000), Constitutive = 5/50000 (0.000), Non-expressing = 14/50000 (0.000), Env = 1.01
+Tick 36: Environment mean = 1.0135
+Tick 36: Plastic = 49990/50000 (1.000), Constitutive = 3/50000 (0.000), Non-expressing = 7/50000 (0.000), Env = 1.01
+Tick 37: Environment mean = 1.014
+Tick 37: Plastic = 49996/50000 (1.000), Constitutive = 3/50000 (0.000), Non-expressing = 1/50000 (0.000), Env = 1.01
+Tick 38: Environment mean = 1.0145
+Tick 38: Plastic = 49995/50000 (1.000), Constitutive = 2/50000 (0.000), Non-expressing = 3/50000 (0.000), Env = 1.01
+Tick 39: Environment mean = 1.015
+Tick 39: Plastic = 49993/50000 (1.000), Constitutive = 4/50000 (0.000), Non-expressing = 3/50000 (0.000), Env = 1.01
+Tick 40: Environment mean = 1.0155
+Tick 40: Plastic = 49997/50000 (1.000), Constitutive = 3/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 41: Environment mean = 1.016
+Tick 41: Plastic = 49996/50000 (1.000), Constitutive = 4/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 42: Environment mean = 1.0165
+Tick 42: Plastic = 49997/50000 (1.000), Constitutive = 3/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 43: Environment mean = 1.017
+Tick 43: Plastic = 49999/50000 (1.000), Constitutive = 1/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 44: Environment mean = 1.0175
+Tick 44: Plastic = 49999/50000 (1.000), Constitutive = 1/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 45: Environment mean = 1.018
+Tick 45: Plastic = 49999/50000 (1.000), Constitutive = 1/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 46: Environment mean = 1.0185
+Tick 46: Plastic = 49998/50000 (1.000), Constitutive = 2/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 47: Environment mean = 1.019
+Tick 47: Plastic = 49998/50000 (1.000), Constitutive = 2/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 48: Environment mean = 1.0195
+Tick 48: Plastic = 49995/50000 (1.000), Constitutive = 5/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 49: Environment mean = 1.02
+Tick 49: Plastic = 49994/50000 (1.000), Constitutive = 6/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 50: Environment mean = 1.0205
+Tick 50: Plastic = 49991/50000 (1.000), Constitutive = 9/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 51: Environment mean = 1.021
+Tick 51: Plastic = 49991/50000 (1.000), Constitutive = 9/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 52: Environment mean = 1.0215
+Tick 52: Plastic = 49993/50000 (1.000), Constitutive = 7/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 53: Environment mean = 1.022
+Tick 53: Plastic = 49991/50000 (1.000), Constitutive = 9/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 54: Environment mean = 1.0225
+Tick 54: Plastic = 49989/50000 (1.000), Constitutive = 11/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 55: Environment mean = 1.023
+Tick 55: Plastic = 49988/50000 (1.000), Constitutive = 12/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 56: Environment mean = 1.0235
+Tick 56: Plastic = 49990/50000 (1.000), Constitutive = 10/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 57: Environment mean = 1.024
+Tick 57: Plastic = 49986/50000 (1.000), Constitutive = 14/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 58: Environment mean = 1.0245
+Tick 58: Plastic = 49984/50000 (1.000), Constitutive = 16/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 59: Environment mean = 1.025
+Tick 59: Plastic = 49985/50000 (1.000), Constitutive = 15/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.02
+Tick 60: Environment mean = 1.0255
+Tick 60: Plastic = 49982/50000 (1.000), Constitutive = 18/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 61: Environment mean = 1.026
+Tick 61: Plastic = 49977/50000 (1.000), Constitutive = 23/50000 (0.000), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 62: Environment mean = 1.0265
+Tick 62: Plastic = 49974/50000 (0.999), Constitutive = 26/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 63: Environment mean = 1.027
+Tick 63: Plastic = 49971/50000 (0.999), Constitutive = 29/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 64: Environment mean = 1.0275
+Tick 64: Plastic = 49972/50000 (0.999), Constitutive = 28/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 65: Environment mean = 1.028
+Tick 65: Plastic = 49974/50000 (0.999), Constitutive = 26/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 66: Environment mean = 1.0285
+Tick 66: Plastic = 49963/50000 (0.999), Constitutive = 37/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 67: Environment mean = 1.029
+Tick 67: Plastic = 49965/50000 (0.999), Constitutive = 35/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 68: Environment mean = 1.0295
+Tick 68: Plastic = 49964/50000 (0.999), Constitutive = 36/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 69: Environment mean = 1.03
+Tick 69: Plastic = 49957/50000 (0.999), Constitutive = 43/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 70: Environment mean = 1.0305
+Tick 70: Plastic = 49945/50000 (0.999), Constitutive = 55/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 71: Environment mean = 1.031
+Tick 71: Plastic = 49939/50000 (0.999), Constitutive = 61/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 72: Environment mean = 1.0315
+Tick 72: Plastic = 49929/50000 (0.999), Constitutive = 71/50000 (0.001), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 73: Environment mean = 1.032
+Tick 73: Plastic = 49890/50000 (0.998), Constitutive = 110/50000 (0.002), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 74: Environment mean = 1.0325
+Tick 74: Plastic = 49885/50000 (0.998), Constitutive = 115/50000 (0.002), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 75: Environment mean = 1.033
+Tick 75: Plastic = 49875/50000 (0.998), Constitutive = 125/50000 (0.003), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 76: Environment mean = 1.0335
+Tick 76: Plastic = 49849/50000 (0.997), Constitutive = 151/50000 (0.003), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 77: Environment mean = 1.034
+Tick 77: Plastic = 49794/50000 (0.996), Constitutive = 206/50000 (0.004), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 78: Environment mean = 1.0345
+Tick 78: Plastic = 49759/50000 (0.995), Constitutive = 241/50000 (0.005), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 79: Environment mean = 1.035
+Tick 79: Plastic = 49725/50000 (0.995), Constitutive = 275/50000 (0.005), Non-expressing = 0/50000 (0.000), Env = 1.03
+Tick 80: Environment mean = 1.0355
+Tick 80: Plastic = 49658/50000 (0.993), Constitutive = 342/50000 (0.007), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 81: Environment mean = 1.036
+Tick 81: Plastic = 49593/50000 (0.992), Constitutive = 407/50000 (0.008), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 82: Environment mean = 1.0365
+Tick 82: Plastic = 49536/50000 (0.991), Constitutive = 464/50000 (0.009), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 83: Environment mean = 1.037
+Tick 83: Plastic = 49440/50000 (0.989), Constitutive = 560/50000 (0.011), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 84: Environment mean = 1.0375
+Tick 84: Plastic = 49384/50000 (0.988), Constitutive = 616/50000 (0.012), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 85: Environment mean = 1.038
+Tick 85: Plastic = 49311/50000 (0.986), Constitutive = 689/50000 (0.014), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 86: Environment mean = 1.0385
+Tick 86: Plastic = 49208/50000 (0.984), Constitutive = 792/50000 (0.016), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 87: Environment mean = 1.039
+Tick 87: Plastic = 49102/50000 (0.982), Constitutive = 898/50000 (0.018), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 88: Environment mean = 1.0395
+Tick 88: Plastic = 48989/50000 (0.980), Constitutive = 1011/50000 (0.020), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 89: Environment mean = 1.04
+Tick 89: Plastic = 48787/50000 (0.976), Constitutive = 1213/50000 (0.024), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 90: Environment mean = 1.0405
+Tick 90: Plastic = 48608/50000 (0.972), Constitutive = 1392/50000 (0.028), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 91: Environment mean = 1.041
+Tick 91: Plastic = 48354/50000 (0.967), Constitutive = 1646/50000 (0.033), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 92: Environment mean = 1.0415
+Tick 92: Plastic = 48077/50000 (0.962), Constitutive = 1923/50000 (0.038), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 93: Environment mean = 1.042
+Tick 93: Plastic = 47797/50000 (0.956), Constitutive = 2203/50000 (0.044), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 94: Environment mean = 1.0425
+Tick 94: Plastic = 47449/50000 (0.949), Constitutive = 2551/50000 (0.051), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 95: Environment mean = 1.043
+Tick 95: Plastic = 47084/50000 (0.942), Constitutive = 2916/50000 (0.058), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 96: Environment mean = 1.0435
+Tick 96: Plastic = 46694/50000 (0.934), Constitutive = 3306/50000 (0.066), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 97: Environment mean = 1.044
+Tick 97: Plastic = 46340/50000 (0.927), Constitutive = 3660/50000 (0.073), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 98: Environment mean = 1.0445
+Tick 98: Plastic = 45962/50000 (0.919), Constitutive = 4038/50000 (0.081), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 99: Environment mean = 1.045
+Tick 99: Plastic = 45359/50000 (0.907), Constitutive = 4641/50000 (0.093), Non-expressing = 0/50000 (0.000), Env = 1.04
+Tick 100: Environment mean = 1.0455
+Tick 100: Plastic = 44759/50000 (0.895), Constitutive = 5241/50000 (0.105), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 101: Environment mean = 1.046
+Tick 101: Plastic = 44066/50000 (0.881), Constitutive = 5934/50000 (0.119), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 102: Environment mean = 1.0465
+Tick 102: Plastic = 43286/50000 (0.866), Constitutive = 6714/50000 (0.134), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 103: Environment mean = 1.047
+Tick 103: Plastic = 42287/50000 (0.846), Constitutive = 7713/50000 (0.154), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 104: Environment mean = 1.0475
+Tick 104: Plastic = 41337/50000 (0.827), Constitutive = 8663/50000 (0.173), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 105: Environment mean = 1.048
+Tick 105: Plastic = 40446/50000 (0.809), Constitutive = 9554/50000 (0.191), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 106: Environment mean = 1.0485
+Tick 106: Plastic = 39251/50000 (0.785), Constitutive = 10749/50000 (0.215), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 107: Environment mean = 1.049
+Tick 107: Plastic = 38143/50000 (0.763), Constitutive = 11857/50000 (0.237), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 108: Environment mean = 1.0495
+Tick 108: Plastic = 36822/50000 (0.736), Constitutive = 13178/50000 (0.264), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 109: Environment mean = 1.05
+Tick 109: Plastic = 35427/50000 (0.709), Constitutive = 14573/50000 (0.291), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 110: Environment mean = 1.0505
+Tick 110: Plastic = 33985/50000 (0.680), Constitutive = 16015/50000 (0.320), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 111: Environment mean = 1.051
+Tick 111: Plastic = 32627/50000 (0.653), Constitutive = 17373/50000 (0.347), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 112: Environment mean = 1.0515
+Tick 112: Plastic = 31241/50000 (0.625), Constitutive = 18759/50000 (0.375), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 113: Environment mean = 1.052
+Tick 113: Plastic = 29816/50000 (0.596), Constitutive = 20184/50000 (0.404), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 114: Environment mean = 1.0525
+Tick 114: Plastic = 28305/50000 (0.566), Constitutive = 21695/50000 (0.434), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 115: Environment mean = 1.053
+Tick 115: Plastic = 26738/50000 (0.535), Constitutive = 23262/50000 (0.465), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 116: Environment mean = 1.0535
+Tick 116: Plastic = 25098/50000 (0.502), Constitutive = 24902/50000 (0.498), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 117: Environment mean = 1.054
+Tick 117: Plastic = 23796/50000 (0.476), Constitutive = 26204/50000 (0.524), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 118: Environment mean = 1.0545
+Tick 118: Plastic = 22353/50000 (0.447), Constitutive = 27647/50000 (0.553), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 119: Environment mean = 1.055
+Tick 119: Plastic = 21131/50000 (0.423), Constitutive = 28869/50000 (0.577), Non-expressing = 0/50000 (0.000), Env = 1.05
+Tick 120: Environment mean = 1.0555
+Tick 120: Plastic = 19796/50000 (0.396), Constitutive = 30204/50000 (0.604), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 121: Environment mean = 1.056
+Tick 121: Plastic = 18615/50000 (0.372), Constitutive = 31385/50000 (0.628), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 122: Environment mean = 1.0565
+Tick 122: Plastic = 17125/50000 (0.343), Constitutive = 32875/50000 (0.657), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 123: Environment mean = 1.057
+Tick 123: Plastic = 15871/50000 (0.317), Constitutive = 34129/50000 (0.683), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 124: Environment mean = 1.0575
+Tick 124: Plastic = 14963/50000 (0.299), Constitutive = 35037/50000 (0.701), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 125: Environment mean = 1.058
+Tick 125: Plastic = 13843/50000 (0.277), Constitutive = 36157/50000 (0.723), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 126: Environment mean = 1.0585
+Tick 126: Plastic = 12802/50000 (0.256), Constitutive = 37198/50000 (0.744), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 127: Environment mean = 1.059
+Tick 127: Plastic = 11848/50000 (0.237), Constitutive = 38152/50000 (0.763), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 128: Environment mean = 1.0595
+Tick 128: Plastic = 11092/50000 (0.222), Constitutive = 38908/50000 (0.778), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 129: Environment mean = 1.06
+Tick 129: Plastic = 10318/50000 (0.206), Constitutive = 39682/50000 (0.794), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 130: Environment mean = 1.0605
+Tick 130: Plastic = 9580/50000 (0.192), Constitutive = 40420/50000 (0.808), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 131: Environment mean = 1.061
+Tick 131: Plastic = 8941/50000 (0.179), Constitutive = 41059/50000 (0.821), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 132: Environment mean = 1.0615
+Tick 132: Plastic = 8392/50000 (0.168), Constitutive = 41608/50000 (0.832), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 133: Environment mean = 1.062
+Tick 133: Plastic = 7618/50000 (0.152), Constitutive = 42382/50000 (0.848), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 134: Environment mean = 1.0625
+Tick 134: Plastic = 7135/50000 (0.143), Constitutive = 42865/50000 (0.857), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 135: Environment mean = 1.063
+Tick 135: Plastic = 6742/50000 (0.135), Constitutive = 43258/50000 (0.865), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 136: Environment mean = 1.0635
+Tick 136: Plastic = 6256/50000 (0.125), Constitutive = 43744/50000 (0.875), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 137: Environment mean = 1.064
+Tick 137: Plastic = 5964/50000 (0.119), Constitutive = 44036/50000 (0.881), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 138: Environment mean = 1.0645
+Tick 138: Plastic = 5596/50000 (0.112), Constitutive = 44404/50000 (0.888), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 139: Environment mean = 1.065
+Tick 139: Plastic = 5266/50000 (0.105), Constitutive = 44734/50000 (0.895), Non-expressing = 0/50000 (0.000), Env = 1.06
+Tick 140: Environment mean = 1.0655
+Tick 140: Plastic = 4964/50000 (0.099), Constitutive = 45036/50000 (0.901), Non-expressing = 0/50000 (0.000), Env = 1.07
+Constitutive phenotype fixed at tick 140

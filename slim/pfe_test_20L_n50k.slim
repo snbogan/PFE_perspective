@@ -1,0 +1,144 @@
+initialize() {
+    setSeed(321);
+    initializeSLiMOptions(keepPedigrees=T);
+    initializeMutationRate(1e-6);
+
+    initializeMutationType("m1", 0.5, "n", 0.0, 0.2);  // plastic variant
+    initializeMutationType("m2", 0.5, "n", 0.0, 0.2);  // constitutive variant
+
+    initializeGenomicElementType("g1", c(m1, m2), c(1.0, 1.0));
+    for (pos in 0:19) initializeGenomicElement(g1, pos, pos);
+    initializeRecombinationRate(1e-8);
+
+    defineConstant("INDUCTION_THRESHOLD", 3.0);
+    defineConstant("INITIAL_ENV_MEAN", 1.0);
+    defineConstant("ENV_SHIFT_RATE", 0.0005);
+    defineConstant("POLYGENIC_THRESHOLD", 10);
+    defineConstant("INITIAL_POLYGENIC_SCORE", 15);
+
+    defineGlobal("ENV_STATE", Dictionary());
+    ENV_STATE.setValue("CURRENT_ENV_MEAN", INITIAL_ENV_MEAN);
+}
+
+1 early() {
+    sim.addSubpop("p1", 50000);
+}
+
+1 late() {
+    // Create plastic group (50% with high m1 scores)
+    half_pop = asInteger(p1.individualCount / 2);
+    plastic_indivs = p1.individuals[0:(half_pop-1)];
+    for (ind in plastic_indivs) {
+        m1_loci = sample(0:19, INITIAL_POLYGENIC_SCORE);
+        for (pos in m1_loci) {
+            target_genome = ifelse(runif(1) < 0.5, ind.genome1, ind.genome2);
+            target_genome.addNewDrawnMutation(m1, pos);
+        }
+    }
+    // Other 50% start with no mutations (will gain through mutation)
+}
+
+1:10000 early() {
+    new_mean = ENV_STATE.getValue("CURRENT_ENV_MEAN") + ENV_SHIFT_RATE;
+    if (new_mean < INDUCTION_THRESHOLD) {
+        ENV_STATE.setValue("CURRENT_ENV_MEAN", new_mean);
+    } else {
+        ENV_STATE.setValue("CURRENT_ENV_MEAN", INDUCTION_THRESHOLD);
+    }
+    catn("Tick " + community.tick + ": Environment mean = " + ENV_STATE.getValue("CURRENT_ENV_MEAN"));
+}
+
+modifyChild() {
+    env = rnorm(1, ENV_STATE.getValue("CURRENT_ENV_MEAN"), 1.0);
+    
+    // Count mutations
+    all_muts = c(parent1.genomes[0].mutations, parent2.genomes[0].mutations);
+    m1_count = 0;
+    m2_count = 0;
+    for (mut in all_muts) {
+        if (mut.position >= 0 & mut.position <= 19) {
+            if (mut.mutationType == m1) m1_count = m1_count + 1;
+            else if (mut.mutationType == m2) m2_count = m2_count + 1;
+        }
+    }
+    total_mut_count = m1_count + m2_count;
+    
+    // Determine phenotype - using only if/else as in original
+    if (total_mut_count >= POLYGENIC_THRESHOLD) {
+        if (m2_count > 0) {  // Any m2 makes it constitutive
+            phenotype = 1;
+        } else {  // Pure m1 - check environment
+            if (env > INDUCTION_THRESHOLD)
+                phenotype = m1_count/20.0;
+            else
+                phenotype = 0;
+        }
+    } else {
+        phenotype = 0;
+    }
+    
+    // Calculate fitness
+    if (phenotype > 0) {
+        current_env = ENV_STATE.getValue("CURRENT_ENV_MEAN");
+        if (phenotype < 1) {  // Plastic
+            env_distance = abs(current_env - 2.0);
+            fitness_effect = 2.0 - env_distance * (m1_count/20.0);
+        } else {  // Constitutive
+            env_distance = abs(current_env - 3.0);
+            fitness_effect = 2.0 - env_distance;
+        }
+        child.fitnessScaling = max(min(fitness_effect, 2.0), 0.1);
+    }
+    return T;
+}
+
+1:10000 late() {
+    plastic = 0;
+    constitutive = 0;
+    non_expr = 0;
+    mean_m1 = 0.0;
+    mean_m2 = 0.0;
+
+    for (ind in p1.individuals) {
+        muts = c(ind.genomes[0].mutations, ind.genomes[1].mutations);
+        m1_count = 0;
+        m2_count = 0;
+        for (mut in muts) {
+            if (mut.position >= 0 & mut.position <= 19) {
+                if (mut.mutationType == m1) m1_count = m1_count + 1;
+                else if (mut.mutationType == m2) m2_count = m2_count + 1;
+            }
+        }
+        total_mut_count = m1_count + m2_count;
+
+        if (total_mut_count >= POLYGENIC_THRESHOLD) {
+            if (m2_count > 0) {  // Fixed classification
+                constitutive = constitutive + 1;
+                mean_m2 = mean_m2 + m2_count;
+            } else {
+                plastic = plastic + 1;
+                mean_m1 = mean_m1 + m1_count;
+            }
+        } else {
+            non_expr = non_expr + 1;
+        }
+    }
+
+    if (plastic > 0) mean_m1 = mean_m1 / plastic;
+    if (constitutive > 0) mean_m2 = mean_m2 / constitutive;
+
+    catn("Tick " + community.tick +
+         " | Plastic: " + plastic + " (mean m1=" + format("%.1f", mean_m1) + ")" +
+         " | Constitutive: " + constitutive + " (mean m2=" + format("%.1f", mean_m2) + ")" +
+         " | Non-expr: " + non_expr +
+         " | Env: " + format("%.2f", ENV_STATE.getValue("CURRENT_ENV_MEAN")));
+
+    if (constitutive / p1.individualCount > 0.9) {
+        catn("Constitutive phenotype fixed at tick " + community.tick);
+        sim.simulationFinished();
+    }
+}
+
+10000 late() {
+    sim.simulationFinished();
+}
